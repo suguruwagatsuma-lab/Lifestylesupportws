@@ -1,284 +1,257 @@
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- ↓↓↓ この1行を追加 ↓↓↓ -->
-  <meta name="robots" content="noindex, nofollow">
-  <!-- ↑↑↑ ここまで ↑↑↑ -->
-  
-  <title>オリジナル家計簿</title>
-  <style>
-    /* （以下略、既存のスタイルシート） */
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>オリジナル家計簿</title>
+  <meta name="robots" content="noindex, nofollow">
+  <title>俺の家計簿 Pro</title>
+  <!-- FullCalendarの読み込み -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; color: #333; }
-    .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    body { font-family: sans-serif; background-color: #f4f7f6; padding: 10px; margin: 0; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h2, h3 { margin-top: 0; }
     
-    /* タブデザイン */
+    /* タブ */
     .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-    .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: #888; font-weight: bold; transition: 0.3s; }
+    .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: #888; font-weight: bold; }
     .tab.active { color: #007bff; border-bottom: 3px solid #007bff; margin-bottom: -2px; }
-    .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .tab-content { display: none; }
     .tab-content.active { display: block; }
     
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* 残高ウィジェット */
+    .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .account-card { background: #e9f5ff; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .account-card span { display: block; font-size: 1.2em; color: #007bff; margin-top: 5px; }
 
-    /* フォーム群 */
-    label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; }
-    input[type="text"], input[type="number"], input[type="date"], select, input[type="file"] { 
-      width: 100%; padding: 12px; margin-top: 5px; box-sizing: border-box; 
-      border: 1px solid #ccc; border-radius: 6px; font-size: 16px; /* iOS自動ズーム防止 */
-    }
-    
-    button { 
-      width: 100%; padding: 14px; margin-top: 20px; background: #007bff; 
-      color: #fff; border: none; border-radius: 6px; font-size: 1.1em; 
-      cursor: pointer; font-weight: bold; transition: background 0.3s;
-    }
-    button:hover:not(:disabled) { background: #0056b3; }
-    button:disabled { background: #aaa; cursor: not-allowed; }
+    /* フォーム要素 */
+    label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.9em; }
+    input, select { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+    button { width: 100%; padding: 14px; margin-top: 20px; background: #007bff; color: #fff; border: none; border-radius: 6px; font-size: 1.1em; cursor: pointer; font-weight: bold; }
+    button:disabled { background: #aaa; }
     .btn-secondary { background: #28a745; }
-    .btn-secondary:hover { background: #1e7e34; }
-
-    #preview { max-width: 100%; margin-top: 15px; display: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .loading { display: none; text-align: center; margin-top: 15px; color: #007bff; font-weight: bold; font-size: 0.95em; }
+    
+    #preview { max-width: 100%; margin-top: 10px; display: none; border-radius: 8px; }
+    #calendar { margin-top: 20px; }
+    
+    /* ローディング画面 */
+    #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.2em; color: #007bff; }
   </style>
 </head>
 <body>
 
+<div id="global-loader">通信中...しばらくお待ちください⏳</div>
+
 <div class="container">
-  <!-- タブメニュー -->
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('receipt')">レシート登録</div>
-    <div class="tab" onclick="switchTab('settings')">システム設定</div>
+    <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュボード</div>
+    <div class="tab" onclick="switchTab('receipt')">📷 レシート登録</div>
   </div>
 
-  <!-- レシート登録タブ -->
-  <div id="receipt-tab" class="tab-content active">
-    <label>📷 レシート撮影 / 画像選択</label>
-    <!-- capture="environment" でスマホの背面カメラを起動 -->
+  <!-- ダッシュボード（口座＆カレンダー） -->
+  <div id="dashboard-tab" class="tab-content active">
+    <h3>💰 現在の口座残高</h3>
+    <div class="account-grid" id="account-container">
+      <!-- JSで残高を自動生成 -->
+    </div>
+    
+    <h3>📅 支出カレンダー</h3>
+    <div id="calendar"></div>
+  </div>
+
+  <!-- レシート登録 -->
+  <div id="receipt-tab" class="tab-content">
+    <label>📷 レシートを撮影 / 選択</label>
     <input type="file" id="file-input" accept="image/*" capture="environment">
     <img id="preview" />
 
-    <button id="analyze-btn" onclick="analyzeImage()" disabled>✨ AIで解析する</button>
-    <div id="loading" class="loading">アップロード＆解析中...⏳</div>
+    <button id="analyze-btn" disabled>✨ AIで読み取る</button>
 
-    <!-- 解析結果・修正フォーム -->
-    <div id="result-form" style="display: none; border-top: 2px dashed #eee; margin-top: 25px; padding-top: 15px;">
+    <div id="result-form" style="display: none; border-top: 2px dashed #eee; margin-top: 20px; padding-top: 15px;">
       <h3>確認・修正</h3>
-      <label>日付</label>
-      <input type="text" id="val-date" placeholder="YYYY/MM/DD">
-      
-      <label>店舗名</label>
-      <input type="text" id="val-store">
-      
-      <label>金額</label>
-      <input type="number" id="val-amount">
-      
-      <label>カテゴリ</label>
-      <select id="val-category"><option>読込中...</option></select>
-
-      <label>メモ（任意）</label>
-      <input type="text" id="val-note">
+      <label>日付</label><input type="text" id="val-date" placeholder="YYYY/MM/DD">
+      <label>店舗名</label><input type="text" id="val-store">
+      <label>金額</label><input type="number" id="val-amount">
+      <label>カテゴリ</label><select id="val-category"></select>
+      <label>支払元 (口座)</label><select id="val-account"></select>
+      <label>メモ</label><input type="text" id="val-note">
       <input type="hidden" id="val-receipt-url">
 
-      <button class="btn-secondary" id="save-btn" onclick="saveData()">💾 確定して登録</button>
+      <button class="btn-secondary" id="save-btn">💾 確定して登録</button>
     </div>
-  </div>
-
-  <!-- 設定タブ -->
-  <div id="settings-tab" class="tab-content">
-    <h2>マスター設定</h2>
-    <label>Gemini モデルバージョン</label>
-    <input type="text" id="setting-model" value="読込中...">
-    <button class="btn-secondary" onclick="saveSettings()" id="setting-btn">⚙️ 設定を保存</button>
   </div>
 </div>
 
 <script>
   // ==========================================
-  // 【重要】環境設定
+  // 【重要】設定
   // ==========================================
-  // GASをデプロイして発行された「ウェブアプリのURL」に置き換えてください
-  const GAS_URL = https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
-  
-  // GAS側の MY_SECRET_TOKEN と完全に一致させる文字列
+  // ここに「新しいデプロイ」で発行したURLを貼り付けてください
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null;
+  let calendarInstance = null;
 
-  // 画面ロード時にGASからカテゴリと設定を取得
-  window.onload = async () => {
-    try {
-      const res = await fetch(`${GAS_URL}?token=${SECRET_TOKEN}&action=getInitialData`);
-      const data = await res.json();
-      
-      if(data.categories) {
-        const select = document.getElementById('val-category');
-        select.innerHTML = data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-      }
-      if(data.settings) {
-        document.getElementById('setting-model').value = data.settings['GeminiModelVersion'] || '';
-      }
-    } catch (err) {
-      console.error("初期データの取得に失敗しました", err);
-    }
+  // 画面を開いた時の初期処理
+  window.onload = () => {
+    fetchInitialData();
   };
 
-  // タブ切り替え処理
-  function switchTab(tabName) {
+  // タブ切り替え
+  function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     
-    if (tabName === 'receipt') {
+    if(tabId === 'dashboard') {
       document.querySelectorAll('.tab')[0].classList.add('active');
-      document.getElementById('receipt-tab').classList.add('active');
+      document.getElementById('dashboard-tab').classList.add('active');
+      if(calendarInstance) calendarInstance.render(); // カレンダーの表示崩れ防止
     } else {
       document.querySelectorAll('.tab')[1].classList.add('active');
-      document.getElementById('settings-tab').classList.add('active');
+      document.getElementById('receipt-tab').classList.add('active');
     }
   }
 
-  // ファイル選択（画像プレビュー表示）
+  // GASとの通信用関数 (エラーキャッチを強化)
+  async function postToGAS(payload) {
+    showLoader(true);
+    payload.token = SECRET_TOKEN;
+    try {
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      showLoader(false);
+      
+      if (!json.success) {
+        alert("サーバーエラーが発生しました:\n" + json.error);
+        throw new Error(json.error);
+      }
+      return json;
+    } catch (err) {
+      showLoader(false);
+      alert("通信に失敗しました。URLやネットワークを確認してください。\n" + err.message);
+      throw err;
+    }
+  }
+
+  // 画面ローダーの表示/非表示
+  function showLoader(show) {
+    document.getElementById('global-loader').style.display = show ? 'block' : 'none';
+  }
+
+  // 初期データ（残高・カレンダー・設定）の取得と描画
+  async function fetchInitialData() {
+    const res = await postToGAS({ action: 'getInitialData' });
+    const data = res.data;
+
+    // 1. 口座残高の描画
+    const accContainer = document.getElementById('account-container');
+    const accSelect = document.getElementById('val-account');
+    accContainer.innerHTML = '';
+    accSelect.innerHTML = '';
+    
+    for (const [name, val] of Object.entries(data.accounts)) {
+      // ダッシュボード用
+      accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span></div>`;
+      // セレクトボックス用
+      accSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    }
+
+    // 2. カテゴリの描画
+    document.getElementById('val-category').innerHTML = data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    // 3. カレンダーの描画 (FullCalendar)
+    const calendarEl = document.getElementById('calendar');
+    const events = [];
+    
+    // 実績データ（青）
+    data.transactions.forEach(tx => {
+      events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff' });
+    });
+    // 見込みデータ（オレンジ）
+    data.forecasts.forEach(fc => {
+      events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14' });
+    });
+
+    if (calendarInstance) calendarInstance.destroy(); // 再描画用
+    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      events: events,
+      contentHeight: 'auto'
+    });
+    calendarInstance.render();
+  }
+
+  // ファイル選択プレビュー
   document.getElementById('file-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     currentFile = file;
-
     const reader = new FileReader();
     reader.onload = function(e) {
-      const preview = document.getElementById('preview');
-      preview.src = e.target.result;
-      preview.style.display = 'block';
+      document.getElementById('preview').src = e.target.result;
+      document.getElementById('preview').style.display = 'block';
       document.getElementById('analyze-btn').disabled = false;
       document.getElementById('result-form').style.display = 'none';
     };
     reader.readAsDataURL(file);
   });
 
-  // 汎用POSTリクエスト関数（CORS回避のため Content-Type を text/plain で送信）
-  async function postToGAS(payload) {
-    payload.token = SECRET_TOKEN; // 認証トークンを付与
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" }, 
-      body: JSON.stringify(payload)
-    });
-    return res.json();
-  }
-
-  // AIで解析するボタン処理
-  function analyzeImage() {
+  // AI解析ボタン
+  document.getElementById('analyze-btn').addEventListener('click', async function() {
     if (!currentFile) return;
-
-    document.getElementById('analyze-btn').disabled = true;
-    document.getElementById('loading').style.display = 'block';
-
     const reader = new FileReader();
     reader.onload = async function(e) {
-      // DataURL形式(data:image/jpeg;base64,〜)からBase64文字列部分のみ抽出
       const base64Data = e.target.result.split(',')[1];
-      const mimeType = currentFile.type;
+      
+      const res = await postToGAS({
+        action: 'analyze',
+        base64Data: base64Data,
+        mimeType: currentFile.type
+      });
 
-      try {
-        const response = await postToGAS({
-          action: 'analyze',
-          base64Data: base64Data,
-          mimeType: mimeType
-        });
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('analyze-btn').disabled = false;
-
-        if (response.success) {
-          // 抽出結果をフォームに自動入力
-          document.getElementById('val-date').value = response.data.date || '';
-          document.getElementById('val-store').value = response.data.store || '';
-          document.getElementById('val-amount').value = response.data.amount || '';
-          document.getElementById('val-category').value = response.data.category || '';
-          document.getElementById('val-receipt-url').value = response.receiptUrl || '';
-          document.getElementById('result-form').style.display = 'block';
-        } else {
-          alert("解析に失敗しました: " + response.error);
-        }
-      } catch (error) {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('analyze-btn').disabled = false;
-        alert("通信エラーが発生しました");
-        console.error(error);
-      }
+      // フォームに入力
+      document.getElementById('val-date').value = res.data.date || '';
+      document.getElementById('val-store').value = res.data.store || '';
+      document.getElementById('val-amount').value = res.data.amount || '';
+      document.getElementById('val-category').value = res.data.category || '';
+      document.getElementById('val-receipt-url').value = res.receiptUrl || '';
+      document.getElementById('result-form').style.display = 'block';
     };
     reader.readAsDataURL(currentFile);
-  }
+  });
 
-  // 確定して登録ボタン処理
-  async function saveData() {
-    const btn = document.getElementById('save-btn');
-    btn.disabled = true;
-    btn.innerText = "保存中...";
-
-    const data = {
+  // 保存ボタン
+  document.getElementById('save-btn').addEventListener('click', async function() {
+    const payload = {
       date: document.getElementById('val-date').value,
       store: document.getElementById('val-store').value,
       amount: document.getElementById('val-amount').value,
       category: document.getElementById('val-category').value,
+      account: document.getElementById('val-account').value,
       note: document.getElementById('val-note').value,
       receiptUrl: document.getElementById('val-receipt-url').value
     };
 
-    try {
-      const response = await postToGAS({
-        action: 'saveTransaction',
-        data: data
-      });
-
-      if(response.success) {
-        alert("登録が完了しました！");
-        // フォームのリセット
-        document.getElementById('file-input').value = "";
-        document.getElementById('preview').style.display = 'none';
-        document.getElementById('result-form').style.display = 'none';
-        currentFile = null;
-      } else {
-        alert("保存エラー: " + response.error);
-      }
-    } catch(error) {
-      alert("通信エラーが発生しました");
-    } finally {
-      btn.disabled = false;
-      btn.innerText = "💾 確定して登録";
-    }
-  }
-
-  // 設定保存ボタン処理
-  async function saveSettings() {
-    const btn = document.getElementById('setting-btn');
-    const modelVersion = document.getElementById('setting-model').value;
+    await postToGAS({ action: 'saveTransaction', data: payload });
     
-    btn.disabled = true;
-    btn.innerText = "保存中...";
+    alert("登録が完了しました！");
+    
+    // フォームリセット
+    document.getElementById('file-input').value = "";
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('result-form').style.display = 'none';
+    currentFile = null;
+    document.getElementById('analyze-btn').disabled = true;
 
-    try {
-      const response = await postToGAS({
-        action: 'updateSetting',
-        key: 'GeminiModelVersion',
-        value: modelVersion
-      });
-      if(response.success) alert("設定を保存しました。");
-      else alert("設定保存エラー: " + response.error);
-    } catch(error) {
-      alert("通信エラーが発生しました");
-    } finally {
-      btn.disabled = false;
-      btn.innerText = "⚙️ 設定を保存";
-    }
-  }
+    // 登録したので、ダッシュボード(残高やカレンダー)を最新情報に更新する
+    fetchInitialData(); 
+    switchTab('dashboard'); // ダッシュボードへ戻す
+  });
 </script>
 </body>
 </html>
