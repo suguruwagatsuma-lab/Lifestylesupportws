@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>wagatsuma's家計簿 Pro</title>
+  <title>wagatsuma’s家計簿</title>
+  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -12,6 +13,9 @@
     .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h2, h3, h4 { margin-top: 0; color: #444; }
     
+    .app-header { text-align: center; margin-bottom: 15px; }
+    .app-title { font-size: 1.4em; font-weight: bold; color: #007bff; margin: 0; }
+
     .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; font-size: 0.95em; }
     .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: #888; font-weight: bold; transition: 0.2s; }
     .tab.active { color: #007bff; border-bottom: 3px solid #007bff; margin-bottom: -2px; }
@@ -33,6 +37,7 @@
     button:disabled { background: #aaa; }
     .btn-secondary { background: #28a745; }
     .btn-warning { background: #fd7e14; }
+    .btn-danger { background: #dc3545; }
     .btn-outline { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 8px; margin-top: 10px;}
 
     #preview { max-width: 100%; margin-top: 10px; display: none; border-radius: 8px; }
@@ -50,17 +55,16 @@
     .history-item:last-child { border-bottom: none; }
     .history-store { font-weight: bold; font-size: 0.95em; }
     .history-sub { font-size: 0.8em; color: #777; margin-top: 3px; }
-    .history-amount { font-weight: bold; font-size: 1em; color: #d9534f; }
+    .history-amount { font-weight: bold; font-size: 1em; }
 
-    /* モーダル (詳細ポップアップ) */
+    /* モーダル (編集ポップアップ) */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-card { background: #fff; width: 90%; max-width: 450px; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-card { background: #fff; width: 92%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
     .modal-header h3 { margin: 0; font-size: 1.2em; }
     .modal-close { cursor: pointer; font-size: 1.5em; font-weight: bold; color: #888; border: none; background: none; padding: 0; width: auto; margin-top: 0; }
-    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #f0f0f0; font-size: 0.9em; }
-    .detail-label { color: #666; font-weight: bold; }
-    .detail-val { font-weight: bold; color: #333; text-align: right; }
+    .modal-btn-group { display: flex; gap: 10px; margin-top: 15px; }
+    .modal-btn-group button { margin-top: 0; }
 
     #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.1em; color: #007bff; }
     .chart-container { position: relative; margin-top: 20px; margin-bottom: 30px; height: 250px; }
@@ -70,26 +74,29 @@
 
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
 
-<!-- 詳細ポップアップモーダル -->
+<!-- 詳細・編集モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
-      <h3 id="modal-type-title">取引詳細</h3>
+      <h3 id="modal-type-title">取引の編集</h3>
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div id="modal-content-body"></div>
-    <div id="modal-receipt-container" style="margin-top: 15px; text-align: center;"></div>
   </div>
 </div>
 
 <div class="container">
+  <div class="app-header">
+    <div class="app-title">wagatsuma’s家計簿</div>
+  </div>
+
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
     <div class="tab" onclick="switchTab('register')">📝 登録</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
-  <!-- ダッシュボード -->
+  <!-- 1. ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <h3>💰 口座残高一覧</h3>
     <div class="account-grid" id="account-container"></div>
@@ -99,7 +106,7 @@
       <canvas id="monthlyChart"></canvas>
     </div>
 
-    <h3>📅 支出カレンダー (タップで詳細)</h3>
+    <h3>📅 支出カレンダー (タップで修正/削除)</h3>
     <div id="calendar"></div>
 
     <h3 style="margin-top: 30px;">📋 最近の利用履歴</h3>
@@ -108,14 +115,15 @@
     </div>
   </div>
 
-  <!-- 登録 -->
+  <!-- 2. 登録 -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs">
       <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
-      <div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力支出</div>
+      <div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力 (支出/収入)</div>
       <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
     </div>
 
+    <!-- AIレシート -->
     <div id="mode-ai" class="sub-tab-content">
       <label>📷 レシート撮影 / 選択</label>
       <input type="file" id="file-input" accept="image/*" capture="environment">
@@ -136,17 +144,25 @@
       </div>
     </div>
 
+    <!-- 手入力支出 / 収入 -->
     <div id="mode-manual" class="sub-tab-content" style="display: none;">
+      <label>種別</label>
+      <select id="man-type" onchange="toggleManualTypeUI()">
+        <option value="支出">💸 支出 (マイナス)</option>
+        <option value="収入">💰 収入 (プラス)</option>
+      </select>
+
       <label>日付</label><input type="date" id="man-date">
-      <label>店舗・用途名</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ">
+      <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、給与、副食費">
       <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
-      <label>カテゴリ</label><select id="man-category"></select>
-      <label>出金元口座</label><select id="man-account"></select>
+      <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
+      <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
       <label>メモ（任意）</label><input type="text" id="man-note">
 
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
+    <!-- 口座振替 -->
     <div id="mode-transfer" class="sub-tab-content" style="display: none;">
       <label>日付</label><input type="date" id="trans-date">
       <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
@@ -158,7 +174,7 @@
     </div>
   </div>
 
-  <!-- 設定 -->
+  <!-- 3. 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     
@@ -232,6 +248,11 @@
       document.querySelectorAll('.sub-tab')[2].classList.add('active');
       document.getElementById('mode-transfer').style.display = 'block';
     }
+  }
+
+  function toggleManualTypeUI() {
+    const type = document.getElementById('man-type').value;
+    document.getElementById('lbl-man-account').innerText = type === '収入' ? '入金先口座' : '出金元口座';
   }
 
   async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
@@ -327,7 +348,6 @@
     });
   }
 
-  // カレンダーの描画 (イベントタップで詳細モーダルを開く)
   function renderCalendar(txs, fcs) {
     const calendarEl = document.getElementById('calendar');
     const events = [];
@@ -335,6 +355,8 @@
     txs.forEach(tx => {
       if (tx.type === '支出') {
         events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff', extendedProps: { rawData: tx, isFc: false } });
+      } else if (tx.type === '収入') {
+        events.push({ title: `➕ ${tx.title} +¥${tx.amount}`, start: tx.date, color: '#28a745', extendedProps: { rawData: tx, isFc: false } });
       } else if (tx.type === '振替') {
         events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date, color: '#6c757d', extendedProps: { rawData: tx, isFc: false } });
       }
@@ -356,7 +378,6 @@
     calendarInstance.render();
   }
 
-  // 利用履歴リストの描画
   function renderHistoryList(txs) {
     const container = document.getElementById('history-container');
     if (!txs || txs.length === 0) {
@@ -364,51 +385,69 @@
       return;
     }
 
-    const sortedTxs = [...txs].reverse(); // 新しい順に並び替え
-    container.innerHTML = sortedTxs.map((tx, idx) => `
-      <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
-        <div class="history-main">
-          <div class="history-store">${tx.title}</div>
-          <div class="history-sub">${tx.date} | ${tx.type === '振替' ? '口座移動' : (tx.category || 'カテゴリなし')} (${tx.account})</div>
+    const sortedTxs = [...txs].reverse();
+    container.innerHTML = sortedTxs.map((tx) => {
+      let amtColor = '#d9534f';
+      let prefix = '-¥';
+      if (tx.type === '収入') { amtColor = '#28a745'; prefix = '+¥'; }
+      else if (tx.type === '振替') { amtColor = '#6c757d'; prefix = '¥'; }
+
+      return `
+        <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
+          <div class="history-main">
+            <div class="history-store">${tx.title}</div>
+            <div class="history-sub">${tx.date} | ${tx.type} (${tx.account})</div>
+          </div>
+          <div class="history-amount" style="color: ${amtColor}">
+            ${prefix}${Number(tx.amount).toLocaleString()}
+          </div>
         </div>
-        <div class="history-amount" style="color: ${tx.type === '振替' ? '#6c757d' : '#d9534f'}">
-          ¥${Number(tx.amount).toLocaleString()}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
-  // 詳細ポップアップモーダルの表示
+  // ポップアップ詳細モーダル (修正＆削除フォーム)
   function showDetailModal(data, isFc) {
     const titleEl = document.getElementById('modal-type-title');
     const bodyEl = document.getElementById('modal-content-body');
-    const receiptEl = document.getElementById('modal-receipt-container');
 
     if (isFc) {
-      titleEl.innerText = "📅 見込み予定";
+      titleEl.innerText = "📅 見込み予定 (読み取り専用)";
       bodyEl.innerHTML = `
-        <div class="detail-row"><span class="detail-label">予定日</span><span class="detail-val">${data.date}</span></div>
-        <div class="detail-row"><span class="detail-label">内容</span><span class="detail-val">${data.title}</span></div>
-        <div class="detail-row"><span class="detail-label">想定金額</span><span class="detail-val">¥${Number(data.amount).toLocaleString()}</span></div>
+        <label>日付</label><input type="text" value="${data.date}" disabled>
+        <label>予定内容</label><input type="text" value="${data.title}" disabled>
+        <label>想定金額</label><input type="text" value="¥${Number(data.amount).toLocaleString()}" disabled>
+        <p style="font-size:0.8em; color:#888; margin-top:15px;">※カレンダーから同期された予定はカレンダー側で編集してください。</p>
       `;
-      receiptEl.innerHTML = '';
     } else {
-      titleEl.innerText = data.type === '振替' ? "🔄 口座振替詳細" : "💸 支出実績詳細";
-      bodyEl.innerHTML = `
-        <div class="detail-row"><span class="detail-label">日付</span><span class="detail-val">${data.date}</span></div>
-        <div class="detail-row"><span class="detail-label">内容 / 店舗</span><span class="detail-val">${data.title}</span></div>
-        <div class="detail-row"><span class="detail-label">金額</span><span class="detail-val">¥${Number(data.amount).toLocaleString()}</span></div>
-        ${data.type === '支出' ? `<div class="detail-row"><span class="detail-label">カテゴリ</span><span class="detail-val">${data.category || '-'}</span></div>` : ''}
-        <div class="detail-row"><span class="detail-label">${data.type === '振替' ? '出金口座' : '利用口座'}</span><span class="detail-val">${data.account || '-'}</span></div>
-        ${data.type === '振替' ? `<div class="detail-row"><span class="detail-label">入金口座</span><span class="detail-val">${data.toAccount || '-'}</span></div>` : ''}
-        <div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${data.note || '-'}</span></div>
-      `;
+      titleEl.innerText = "✏️ 取引データの修正・削除";
+      const catOpts = appData.categories.map(c => `<option value="${c}" ${c === data.category ? 'selected' : ''}>${c}</option>`).join('');
+      const accOpts = Object.keys(appData.accounts).map(a => `<option value="${a}" ${a === data.account ? 'selected' : ''}>${a}</option>`).join('');
+      const toAccOpts = Object.keys(appData.accounts).map(a => `<option value="${a}" ${a === data.toAccount ? 'selected' : ''}>${a}</option>`).join('');
 
-      if (data.receiptUrl) {
-        receiptEl.innerHTML = `<a href="${data.receiptUrl}" target="_blank" style="color: #007bff; font-weight: bold; text-decoration: none;">📷 レシート画像を開く</a>`;
-      } else {
-        receiptEl.innerHTML = '';
-      }
+      bodyEl.innerHTML = `
+        <input type="hidden" id="edit-id" value="${data.id}">
+        <label>種別</label>
+        <select id="edit-type">
+          <option value="支出" ${data.type === '支出' ? 'selected' : ''}>💸 支出</option>
+          <option value="収入" ${data.type === '収入' ? 'selected' : ''}>💰 収入</option>
+          <option value="振替" ${data.type === '振替' ? 'selected' : ''}>🔄 口座振替</option>
+        </select>
+        
+        <label>日付</label><input type="date" id="edit-date" value="${data.date}">
+        <label>店舗・用途・内容</label><input type="text" id="edit-store" value="${data.title || ''}">
+        <label>金額</label><input type="number" id="edit-amount" value="${data.amount}">
+        <label>カテゴリ</label><select id="edit-category">${catOpts}</select>
+        <label>対象口座 (出金元)</label><select id="edit-account">${accOpts}</select>
+        <label>振替先口座 (振替時のみ)</label><select id="edit-to-account">${toAccOpts}</select>
+        <label>メモ</label><input type="text" id="edit-note" value="${data.note || ''}">
+        ${data.receiptUrl ? `<p style="margin-top:10px;"><a href="${data.receiptUrl}" target="_blank" style="color:#007bff; font-weight:bold;">📷 レシート画像を見る</a></p>` : ''}
+
+        <div class="modal-btn-group">
+          <button class="btn-secondary" onclick="updateTransactionSubmit()">💾 修正を保存</button>
+          <button class="btn-danger" onclick="deleteTransactionSubmit('${data.id}')">🗑️ 削除</button>
+        </div>
+      `;
     }
 
     document.getElementById('detail-modal').style.display = 'flex';
@@ -416,6 +455,33 @@
 
   function closeModal() {
     document.getElementById('detail-modal').style.display = 'none';
+  }
+
+  async function updateTransactionSubmit() {
+    const payload = {
+      id: document.getElementById('edit-id').value,
+      type: document.getElementById('edit-type').value,
+      date: document.getElementById('edit-date').value.replace(/-/g, '/'),
+      store: document.getElementById('edit-store').value,
+      amount: document.getElementById('edit-amount').value,
+      category: document.getElementById('edit-category').value,
+      account: document.getElementById('edit-account').value,
+      toAccount: document.getElementById('edit-to-account').value,
+      note: document.getElementById('edit-note').value
+    };
+
+    await postToGAS({ action: 'updateTransaction', data: payload }, "データ修正中...");
+    alert("修正を保存しました！");
+    closeModal();
+    fetchInitialData();
+  }
+
+  async function deleteTransactionSubmit(id) {
+    if (!confirm("この取引データを削除してもよろしいですか？")) return;
+    await postToGAS({ action: 'deleteTransaction', id: id }, "データ削除中...");
+    alert("データを削除しました。");
+    closeModal();
+    fetchInitialData();
   }
 
   function compressImage(file, maxWidth = 1024, quality = 0.6) {
@@ -502,7 +568,7 @@
     await postToGAS({
       action: 'saveTransaction',
       data: {
-        type: '支出',
+        type: document.getElementById('man-type').value,
         date: document.getElementById('man-date').value.replace(/-/g, '/'),
         store: document.getElementById('man-store').value,
         amount: amount,
