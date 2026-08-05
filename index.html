@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>俺の家計簿 Pro</title>
-  <!-- FullCalendar -->
+  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; background-color: #f4f7f6; padding: 10px; margin: 0; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h2, h3 { margin-top: 0; color: #444; }
+    .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2, h3, h4 { margin-top: 0; color: #444; }
     
     /* タブ */
     .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; font-size: 0.95em; }
@@ -19,95 +20,139 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     
-    /* 残高ウィジェット */
+    /* サブタブ（登録画面の切替用） */
+    .sub-tabs { display: flex; background: #f0f0f0; border-radius: 6px; padding: 3px; margin-bottom: 15px; }
+    .sub-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: bold; color: #666; }
+    .sub-tab.active { background: #fff; color: #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    /* 残高カード */
     .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
-    .account-card { background: #e9f5ff; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #cce5ff;}
-    .account-card span { display: block; font-size: 1.2em; color: #007bff; margin-top: 5px; }
+    .account-card { background: #e9f5ff; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #cce5ff; }
+    .account-card span { display: block; font-size: 1.1em; color: #007bff; margin-top: 4px; }
 
     /* フォーム要素 */
-    label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; color: #555; }
-    input, select { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+    label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.85em; color: #555; }
+    input, select { width: 100%; padding: 10px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
     
-    button { width: 100%; padding: 14px; margin-top: 20px; background: #007bff; color: #fff; border: none; border-radius: 6px; font-size: 1.1em; cursor: pointer; font-weight: bold; }
+    button { width: 100%; padding: 12px; margin-top: 18px; background: #007bff; color: #fff; border: none; border-radius: 6px; font-size: 1em; cursor: pointer; font-weight: bold; }
     button:disabled { background: #aaa; }
     .btn-secondary { background: #28a745; }
-    .btn-outline { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 10px; margin-top: 10px;}
+    .btn-warning { background: #fd7e14; }
+    .btn-outline { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 8px; margin-top: 10px;}
 
     #preview { max-width: 100%; margin-top: 10px; display: none; border-radius: 8px; }
-    #calendar { margin-top: 20px; font-size: 0.9em; }
+    #calendar { margin-top: 20px; font-size: 0.85em; }
     
-    /* 設定画面のリストUI */
     .setting-section { border-top: 2px dashed #eee; margin-top: 25px; padding-top: 15px; }
-    .account-list-item { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #eee; }
-    .account-list-item input { width: 40%; margin-top: 0; }
-    .account-list-item button { width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9em; }
+    .account-list-item { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #eee; }
+    .account-list-item input { width: 45%; margin-top: 0; }
+    .account-list-item button { width: auto; padding: 6px 10px; margin-top: 0; font-size: 0.85em; }
 
-    #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.2em; color: #007bff; }
+    #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.1em; color: #007bff; }
+    .chart-container { position: relative; margin-top: 20px; margin-bottom: 30px; height: 250px; }
   </style>
 </head>
 <body>
 
-<div id="global-loader">通信中...⏳</div>
+<div id="global-loader"><div id="loader-msg">通信中...⏳</div></div>
 
 <div class="container">
+  <!-- メインタブ -->
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
-    <div class="tab" onclick="switchTab('receipt')">📷 登録</div>
+    <div class="tab" onclick="switchTab('register')">📝 登録</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
   <!-- 1. ダッシュボードタブ -->
   <div id="dashboard-tab" class="tab-content active">
-    <h3>💰 現在の口座残高</h3>
+    <h3>💰 口座残高一覧</h3>
     <div class="account-grid" id="account-container"></div>
+    
+    <h3>📈 月別・口座別の支出推移</h3>
+    <div class="chart-container">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+
     <h3>📅 支出カレンダー</h3>
     <div id="calendar"></div>
   </div>
 
-  <!-- 2. レシート登録タブ -->
-  <div id="receipt-tab" class="tab-content">
-    <label>📷 レシートを撮影 / 選択</label>
-    <input type="file" id="file-input" accept="image/*" capture="environment">
-    <img id="preview" />
+  <!-- 2. 登録タブ（AIレシート / 手動支出 / 口座振替） -->
+  <div id="register-tab" class="tab-content">
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
+      <div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力支出</div>
+      <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
+    </div>
 
-    <button id="analyze-btn" disabled>✨ AIで読み取る</button>
+    <!-- モードA: AIレシート -->
+    <div id="mode-ai" class="sub-tab-content">
+      <label>📷 レシート撮影 / 選択</label>
+      <input type="file" id="file-input" accept="image/*" capture="environment">
+      <img id="preview" />
+      <button id="analyze-btn" disabled>✨ AI解析実行</button>
 
-    <div id="result-form" style="display: none; border-top: 2px dashed #eee; margin-top: 20px; padding-top: 15px;">
-      <h3>確認・修正</h3>
-      <label>日付</label><input type="text" id="val-date" placeholder="YYYY/MM/DD">
-      <label>店舗名</label><input type="text" id="val-store">
-      <label>金額</label><input type="number" id="val-amount">
-      <label>カテゴリ</label><select id="val-category"></select>
-      <label>支払元 (口座)</label><select id="val-account"></select>
-      <label>メモ</label><input type="text" id="val-note">
-      <input type="hidden" id="val-receipt-url">
+      <div id="result-form" style="display: none; border-top: 2px dashed #eee; margin-top: 15px; padding-top: 10px;">
+        <h4>解析結果の確認・保存</h4>
+        <label>日付</label><input type="text" id="ai-date" placeholder="YYYY/MM/DD">
+        <label>店舗名</label><input type="text" id="ai-store">
+        <label>金額</label><input type="number" id="ai-amount">
+        <label>カテゴリ</label><select id="ai-category"></select>
+        <label>出金元口座</label><select id="ai-account"></select>
+        <label>メモ</label><input type="text" id="ai-note">
+        <input type="hidden" id="ai-receipt-url">
 
-      <button class="btn-secondary" id="save-btn">💾 確定して登録</button>
+        <button class="btn-secondary" onclick="saveAiTransaction()">💾 確定して登録</button>
+      </div>
+    </div>
+
+    <!-- モードB: 手入力支出 -->
+    <div id="mode-manual" class="sub-tab-content" style="display: none;">
+      <label>日付</label><input type="date" id="man-date">
+      <label>店舗・用途名</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ">
+      <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
+      <label>カテゴリ</label><select id="man-category"></select>
+      <label>出金元口座</label><select id="man-account"></select>
+      <label>メモ（任意）</label><input type="text" id="man-note">
+
+      <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
+    </div>
+
+    <!-- モードC: 口座振替 -->
+    <div id="mode-transfer" class="sub-tab-content" style="display: none;">
+      <label>日付</label><input type="date" id="trans-date">
+      <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
+      <label>振替先 (入金口座)</label><select id="trans-to-account"></select>
+      <label>移動金額</label><input type="number" id="trans-amount" placeholder="例: 30000">
+      <label>メモ（任意）</label><input type="text" id="trans-note" placeholder="例: チャージ、ATM引き出し">
+
+      <button class="btn-warning" onclick="saveTransferTransaction()">🔄 口座間移動を実行</button>
     </div>
   </div>
 
   <!-- 3. 設定タブ -->
   <div id="settings-tab" class="tab-content">
-    <h2>マスター設定</h2>
+    <h2>システム設定</h2>
     
-    <!-- Geminiの設定 -->
     <label>Gemini モデルバージョン</label>
     <input type="text" id="setting-model" placeholder="読込中...">
-    <button class="btn-secondary" onclick="saveModelSetting()" id="setting-btn">⚙️ モデル設定を保存</button>
+    <button class="btn-secondary" onclick="saveModelSetting()">⚙️ モデル設定を保存</button>
 
-    <!-- 口座管理セクション -->
+    <div class="setting-section">
+      <h3>📅 Googleカレンダー同期</h3>
+      <p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p>
+      <button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
+    </div>
+
     <div class="setting-section">
       <h3>🏦 口座情報の管理</h3>
-      <p style="font-size: 0.85em; color: #666;">※残高を修正して「更新」を押すとベース金額が上書きされます。</p>
-      
-      <div id="manage-account-list">
-        <!-- JSで既存口座リストを生成 -->
-      </div>
+      <div id="manage-account-list"></div>
 
-      <h4 style="margin-top: 20px;">＋ 新しい口座の追加</h4>
+      <h4>＋ 新しい口座の追加</h4>
       <input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)">
       <input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)">
-      <button class="btn-outline" onclick="saveAccount(document.getElementById('new-account-name').value, document.getElementById('new-account-balance').value)">追加する</button>
+      <button class="btn-outline" onclick="addNewAccount()">追加する</button>
     </div>
   </div>
 </div>
@@ -121,9 +166,18 @@
 
   let currentFile = null;
   let calendarInstance = null;
+  let chartInstance = null;
+  let appData = null;
 
-  window.onload = () => { fetchInitialData(); };
+  window.onload = () => {
+    // 日付フィールドのデフォルトを今日にする
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('man-date').value = today;
+    document.getElementById('trans-date').value = today;
+    fetchInitialData();
+  };
 
+  // メインタブ切替
   function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -132,17 +186,35 @@
       document.querySelectorAll('.tab')[0].classList.add('active');
       document.getElementById('dashboard-tab').classList.add('active');
       if(calendarInstance) calendarInstance.render();
-    } else if(tabId === 'receipt') {
+    } else if(tabId === 'register') {
       document.querySelectorAll('.tab')[1].classList.add('active');
-      document.getElementById('receipt-tab').classList.add('active');
+      document.getElementById('register-tab').classList.add('active');
     } else {
       document.querySelectorAll('.tab')[2].classList.add('active');
       document.getElementById('settings-tab').classList.add('active');
     }
   }
 
-  async function postToGAS(payload) {
-    showLoader(true);
+  // サブタブ切替 (登録画面)
+  function switchSubTab(subMode) {
+    document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+
+    if(subMode === 'ai') {
+      document.querySelectorAll('.sub-tab')[0].classList.add('active');
+      document.getElementById('mode-ai').style.display = 'block';
+    } else if(subMode === 'manual') {
+      document.querySelectorAll('.sub-tab')[1].classList.add('active');
+      document.getElementById('mode-manual').style.display = 'block';
+    } else {
+      document.querySelectorAll('.sub-tab')[2].classList.add('active');
+      document.getElementById('mode-transfer').style.display = 'block';
+    }
+  }
+
+  // APIリクエスト汎用関数
+  async function postToGAS(payload, loadingMsg = "通信中...⏳") {
+    showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
       const res = await fetch(GAS_URL, {
@@ -154,7 +226,7 @@
       showLoader(false);
       
       if (!json.success) {
-        alert("サーバーエラー:\n" + json.error);
+        alert("エラーが発生しました:\n" + json.error);
         throw new Error(json.error);
       }
       return json;
@@ -165,48 +237,91 @@
     }
   }
 
-  function showLoader(show) {
+  function showLoader(show, msg = "通信中...⏳") {
+    document.getElementById('loader-msg').innerText = msg;
     document.getElementById('global-loader').style.display = show ? 'block' : 'none';
   }
 
-  // 初期データの取得と画面全体の描画
+  // 1. 初期データ読込と画面描画
   async function fetchInitialData() {
-    const res = await postToGAS({ action: 'getInitialData' });
-    const data = res.data;
+    const res = await postToGAS({ action: 'getInitialData' }, "データ読み込み中...");
+    appData = res.data;
 
-    // --- ダッシュボード ＆ 登録フォームの描画 ---
+    // A. 残高カード・口座セレクトボックスのセット
     const accContainer = document.getElementById('account-container');
-    const accSelect = document.getElementById('val-account');
-    const manageAccList = document.getElementById('manage-account-list'); // 設定タブ用
+    const aiAcc = document.getElementById('ai-account');
+    const manAcc = document.getElementById('man-account');
+    const transFrom = document.getElementById('trans-from-account');
+    const transTo = document.getElementById('trans-to-account');
+    const manageAccList = document.getElementById('manage-account-list');
     
-    accContainer.innerHTML = '';
-    accSelect.innerHTML = '';
-    manageAccList.innerHTML = '';
-    
-    for (const [name, val] of Object.entries(data.accounts)) {
-      // 1. ダッシュボードの残高
+    accContainer.innerHTML = ''; aiAcc.innerHTML = ''; manAcc.innerHTML = '';
+    transFrom.innerHTML = ''; transTo.innerHTML = ''; manageAccList.innerHTML = '';
+
+    for (const [name, val] of Object.entries(appData.accounts)) {
       accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span></div>`;
-      // 2. 登録フォームのプルダウン
-      accSelect.innerHTML += `<option value="${name}">${name}</option>`;
-      // 3. 設定画面の修正フォーム（表示するのは現在のベース金額 = val.initial）
+      const opt = `<option value="${name}">${name}</option>`;
+      aiAcc.innerHTML += opt; manAcc.innerHTML += opt; transFrom.innerHTML += opt; transTo.innerHTML += opt;
+
       manageAccList.innerHTML += `
         <div class="account-list-item">
           <strong>${name}</strong>
           <input type="number" id="edit-acc-${name}" value="${val.initial}">
           <button class="btn-secondary" onclick="saveAccount('${name}', document.getElementById('edit-acc-${name}').value)">更新</button>
-        </div>
-      `;
+        </div>`;
     }
 
-    // カテゴリとモデル設定の描画
-    document.getElementById('val-category').innerHTML = data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('setting-model').value = data.settings['GeminiModelVersion'] || '';
+    // B. カテゴリのセット
+    const catOpts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('ai-category').innerHTML = catOpts;
+    document.getElementById('man-category').innerHTML = catOpts;
 
-    // --- カレンダーの描画 ---
+    // C. 設定値のセット
+    document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
+
+    // D. 月別推移グラフの描画 (Chart.js)
+    renderChart(appData.monthlyStats);
+
+    // E. カレンダーの描画 (FullCalendar)
+    renderCalendar(appData.transactions, appData.forecasts);
+  }
+
+  // グラフ描画関数
+  function renderChart(monthlyStats) {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const months = Object.keys(monthlyStats).sort();
+    const accountNames = Object.keys(appData.accounts);
+
+    const colors = ['#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
+    const datasets = accountNames.map((accName, idx) => {
+      return {
+        label: accName,
+        data: months.map(m => monthlyStats[m][accName] || 0),
+        backgroundColor: colors[idx % colors.length]
+      };
+    });
+
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: months, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { x: { stacked: true }, y: { stacked: true } }
+      }
+    });
+  }
+
+  // カレンダー描画関数
+  function renderCalendar(txs, fcs) {
     const calendarEl = document.getElementById('calendar');
     const events = [];
-    data.transactions.forEach(tx => { events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff' }); });
-    data.forecasts.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14' }); });
+    txs.forEach(tx => {
+      if (tx.type === '支出') events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff' });
+      else if (tx.type === '振替') events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date, color: '#6c757d' });
+    });
+    fcs.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14' }); });
 
     if (calendarInstance) calendarInstance.destroy();
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
@@ -217,29 +332,140 @@
     calendarInstance.render();
   }
 
-  // 設定：モデル保存
+  // --- 登録処理群 ---
+
+  // AI解析実行
+  document.getElementById('analyze-btn').addEventListener('click', async function() {
+    if (!currentFile) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64Data = e.target.result.split(',')[1];
+      const res = await postToGAS({ action: 'analyze', base64Data: base64Data, mimeType: currentFile.type }, "Geminiでレシート解析中...🤖");
+
+      document.getElementById('ai-date').value = res.data.date || '';
+      document.getElementById('ai-store').value = res.data.store || '';
+      document.getElementById('ai-amount').value = res.data.amount || '';
+      document.getElementById('ai-category').value = res.data.category || '';
+      document.getElementById('ai-receipt-url').value = res.receiptUrl || '';
+      document.getElementById('result-form').style.display = 'block';
+    };
+    reader.readAsDataURL(currentFile);
+  });
+
+  // AI登録
+  async function saveAiTransaction() {
+    await postToGAS({
+      action: 'saveTransaction',
+      data: {
+        type: '支出',
+        date: document.getElementById('ai-date').value,
+        store: document.getElementById('ai-store').value,
+        amount: document.getElementById('ai-amount').value,
+        category: document.getElementById('ai-category').value,
+        account: document.getElementById('ai-account').value,
+        note: document.getElementById('ai-note').value,
+        receiptUrl: document.getElementById('ai-receipt-url').value
+      }
+    }, "データ保存中...");
+    
+    alert("登録完了しました！");
+    resetRegisterForm();
+  }
+
+  // 手動支出登録
+  async function saveManualTransaction() {
+    const amount = document.getElementById('man-amount').value;
+    if (!amount) { alert("金額を入力してください"); return; }
+
+    await postToGAS({
+      action: 'saveTransaction',
+      data: {
+        type: '支出',
+        date: document.getElementById('man-date').value.replace(/-/g, '/'),
+        store: document.getElementById('man-store').value,
+        amount: amount,
+        category: document.getElementById('man-category').value,
+        account: document.getElementById('man-account').value,
+        note: document.getElementById('man-note').value
+      }
+    }, "手入力データ保存中...");
+
+    alert("登録完了しました！");
+    resetRegisterForm();
+  }
+
+  // 口座振替登録
+  async function saveTransferTransaction() {
+    const fromAcc = document.getElementById('trans-from-account').value;
+    const toAcc = document.getElementById('trans-to-account').value;
+    const amount = document.getElementById('trans-amount').value;
+
+    if (fromAcc === toAcc) { alert("振替元と振替先には異なる口座を選んでください"); return; }
+    if (!amount) { alert("金額を入力してください"); return; }
+
+    await postToGAS({
+      action: 'saveTransaction',
+      data: {
+        type: '振替',
+        date: document.getElementById('trans-date').value.replace(/-/g, '/'),
+        store: '口座間移動',
+        amount: amount,
+        category: '口座振替',
+        account: fromAcc,
+        toAccount: toAcc,
+        note: document.getElementById('trans-note').value
+      }
+    }, "口座間移動を処理中...");
+
+    alert("口座間移動を登録しました！");
+    resetRegisterForm();
+  }
+
+  // フォームリセット
+  function resetRegisterForm() {
+    document.getElementById('file-input').value = "";
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('result-form').style.display = 'none';
+    document.getElementById('man-store').value = "";
+    document.getElementById('man-amount').value = "";
+    document.getElementById('trans-amount').value = "";
+    currentFile = null;
+    document.getElementById('analyze-btn').disabled = true;
+
+    fetchInitialData();
+    switchTab('dashboard');
+  }
+
+  // --- 設定変更処理群 ---
+
   async function saveModelSetting() {
     const model = document.getElementById('setting-model').value;
-    await postToGAS({ action: 'updateSetting', key: 'GeminiModelVersion', value: model });
-    alert("モデル設定を保存しました");
+    await postToGAS({ action: 'updateSetting', key: 'GeminiModelVersion', value: model }, "設定保存中...");
+    alert("モデル設定を保存しました。");
   }
 
-  // 設定：口座情報の保存（新規追加・修正 共通）
   async function saveAccount(name, balance) {
-    if(!name || balance === "") {
-      alert("口座名と金額を正しく入力してください");
-      return;
-    }
-    await postToGAS({ action: 'saveAccount', accountName: name, initialBalance: Number(balance) });
-    alert(`口座「${name}」の情報を保存しました。`);
-    
-    // 入力欄をクリアして最新データを再取得
+    await postToGAS({ action: 'saveAccount', accountName: name, initialBalance: Number(balance) }, "口座情報更新中...");
+    alert(`口座「${name}」の初期金額を更新しました。`);
+    fetchInitialData();
+  }
+
+  async function addNewAccount() {
+    const name = document.getElementById('new-account-name').value;
+    const bal = document.getElementById('new-account-balance').value;
+    if (!name) { alert("口座名を入力してください"); return; }
+    await saveAccount(name, bal || 0);
     document.getElementById('new-account-name').value = '';
     document.getElementById('new-account-balance').value = '';
-    fetchInitialData(); 
   }
 
-  // ファイル選択プレビュー
+  async function syncCalendar() {
+    const res = await postToGAS({ action: 'syncCalendar' }, "Googleカレンダーと同期中...🗓️");
+    alert(res.message);
+    fetchInitialData();
+  }
+
+  // ファイルプレビュー処理
   document.getElementById('file-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -252,49 +478,6 @@
       document.getElementById('result-form').style.display = 'none';
     };
     reader.readAsDataURL(file);
-  });
-
-  // AI解析ボタン
-  document.getElementById('analyze-btn').addEventListener('click', async function() {
-    if (!currentFile) return;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const base64Data = e.target.result.split(',')[1];
-      const res = await postToGAS({ action: 'analyze', base64Data: base64Data, mimeType: currentFile.type });
-
-      document.getElementById('val-date').value = res.data.date || '';
-      document.getElementById('val-store').value = res.data.store || '';
-      document.getElementById('val-amount').value = res.data.amount || '';
-      document.getElementById('val-category').value = res.data.category || '';
-      document.getElementById('val-receipt-url').value = res.receiptUrl || '';
-      document.getElementById('result-form').style.display = 'block';
-    };
-    reader.readAsDataURL(currentFile);
-  });
-
-  // レシート保存ボタン
-  document.getElementById('save-btn').addEventListener('click', async function() {
-    const payload = {
-      date: document.getElementById('val-date').value,
-      store: document.getElementById('val-store').value,
-      amount: document.getElementById('val-amount').value,
-      category: document.getElementById('val-category').value,
-      account: document.getElementById('val-account').value,
-      note: document.getElementById('val-note').value,
-      receiptUrl: document.getElementById('val-receipt-url').value
-    };
-
-    await postToGAS({ action: 'saveTransaction', data: payload });
-    alert("登録が完了しました！");
-    
-    document.getElementById('file-input').value = "";
-    document.getElementById('preview').style.display = 'none';
-    document.getElementById('result-form').style.display = 'none';
-    currentFile = null;
-    document.getElementById('analyze-btn').disabled = true;
-
-    fetchInitialData(); 
-    switchTab('dashboard'); 
   });
 </script>
 </body>
