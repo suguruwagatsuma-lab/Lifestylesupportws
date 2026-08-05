@@ -13,24 +13,20 @@
     .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h2, h3, h4 { margin-top: 0; color: #444; }
     
-    /* タブ */
     .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; font-size: 0.95em; }
     .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: #888; font-weight: bold; transition: 0.2s; }
     .tab.active { color: #007bff; border-bottom: 3px solid #007bff; margin-bottom: -2px; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     
-    /* サブタブ（登録画面の切替用） */
     .sub-tabs { display: flex; background: #f0f0f0; border-radius: 6px; padding: 3px; margin-bottom: 15px; }
     .sub-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: bold; color: #666; }
     .sub-tab.active { background: #fff; color: #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    /* 残高カード */
     .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
     .account-card { background: #e9f5ff; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #cce5ff; }
     .account-card span { display: block; font-size: 1.1em; color: #007bff; margin-top: 4px; }
 
-    /* フォーム要素 */
     label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.85em; color: #555; }
     input, select { width: 100%; padding: 10px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
     
@@ -54,17 +50,15 @@
 </head>
 <body>
 
-<div id="global-loader"><div id="loader-msg">通信中...⏳</div></div>
+<div id="global-loader"><div id="loader-msg">高速読み込み中...⚡</div></div>
 
 <div class="container">
-  <!-- メインタブ -->
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
     <div class="tab" onclick="switchTab('register')">📝 登録</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
-  <!-- 1. ダッシュボードタブ -->
   <div id="dashboard-tab" class="tab-content active">
     <h3>💰 口座残高一覧</h3>
     <div class="account-grid" id="account-container"></div>
@@ -78,7 +72,6 @@
     <div id="calendar"></div>
   </div>
 
-  <!-- 2. 登録タブ（AIレシート / 手動支出 / 口座振替） -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs">
       <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
@@ -86,7 +79,6 @@
       <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
     </div>
 
-    <!-- モードA: AIレシート -->
     <div id="mode-ai" class="sub-tab-content">
       <label>📷 レシート撮影 / 選択</label>
       <input type="file" id="file-input" accept="image/*" capture="environment">
@@ -107,7 +99,6 @@
       </div>
     </div>
 
-    <!-- モードB: 手入力支出 -->
     <div id="mode-manual" class="sub-tab-content" style="display: none;">
       <label>日付</label><input type="date" id="man-date">
       <label>店舗・用途名</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ">
@@ -119,7 +110,6 @@
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
-    <!-- モードC: 口座振替 -->
     <div id="mode-transfer" class="sub-tab-content" style="display: none;">
       <label>日付</label><input type="date" id="trans-date">
       <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
@@ -131,7 +121,6 @@
     </div>
   </div>
 
-  <!-- 3. 設定タブ -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     
@@ -158,9 +147,6 @@
 </div>
 
 <script>
-  // ==========================================
-  // 【重要】新しいデプロイURLを貼り付けてください
-  // ==========================================
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -170,14 +156,12 @@
   let appData = null;
 
   window.onload = () => {
-    // 日付フィールドのデフォルトを今日にする
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('man-date').value = today;
     document.getElementById('trans-date').value = today;
     fetchInitialData();
   };
 
-  // メインタブ切替
   function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -195,7 +179,6 @@
     }
   }
 
-  // サブタブ切替 (登録画面)
   function switchSubTab(subMode) {
     document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
@@ -212,8 +195,7 @@
     }
   }
 
-  // APIリクエスト汎用関数
-  async function postToGAS(payload, loadingMsg = "通信中...⏳") {
+  async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
     showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
@@ -237,17 +219,15 @@
     }
   }
 
-  function showLoader(show, msg = "通信中...⏳") {
+  function showLoader(show, msg = "高速処理中...⚡") {
     document.getElementById('loader-msg').innerText = msg;
     document.getElementById('global-loader').style.display = show ? 'block' : 'none';
   }
 
-  // 1. 初期データ読込と画面描画
   async function fetchInitialData() {
-    const res = await postToGAS({ action: 'getInitialData' }, "データ読み込み中...");
+    const res = await postToGAS({ action: 'getInitialData' }, "高速読み込み中...⚡");
     appData = res.data;
 
-    // A. 残高カード・口座セレクトボックスのセット
     const accContainer = document.getElementById('account-container');
     const aiAcc = document.getElementById('ai-account');
     const manAcc = document.getElementById('man-account');
@@ -271,22 +251,16 @@
         </div>`;
     }
 
-    // B. カテゴリのセット
     const catOpts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
     document.getElementById('ai-category').innerHTML = catOpts;
     document.getElementById('man-category').innerHTML = catOpts;
 
-    // C. 設定値のセット
     document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
 
-    // D. 月別推移グラフの描画 (Chart.js)
     renderChart(appData.monthlyStats);
-
-    // E. カレンダーの描画 (FullCalendar)
     renderCalendar(appData.transactions, appData.forecasts);
   }
 
-  // グラフ描画関数
   function renderChart(monthlyStats) {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const months = Object.keys(monthlyStats).sort();
@@ -313,7 +287,6 @@
     });
   }
 
-  // カレンダー描画関数
   function renderCalendar(txs, fcs) {
     const calendarEl = document.getElementById('calendar');
     const events = [];
@@ -332,15 +305,12 @@
     calendarInstance.render();
   }
 
-  // --- 登録処理群 ---
-
-  // AI解析実行
   document.getElementById('analyze-btn').addEventListener('click', async function() {
     if (!currentFile) return;
     const reader = new FileReader();
     reader.onload = async function(e) {
       const base64Data = e.target.result.split(',')[1];
-      const res = await postToGAS({ action: 'analyze', base64Data: base64Data, mimeType: currentFile.type }, "Geminiでレシート解析中...🤖");
+      const res = await postToGAS({ action: 'analyze', base64Data: base64Data, mimeType: currentFile.type }, "Geminiで高速解析中...🤖");
 
       document.getElementById('ai-date').value = res.data.date || '';
       document.getElementById('ai-store').value = res.data.store || '';
@@ -352,7 +322,6 @@
     reader.readAsDataURL(currentFile);
   });
 
-  // AI登録
   async function saveAiTransaction() {
     await postToGAS({
       action: 'saveTransaction',
@@ -372,7 +341,6 @@
     resetRegisterForm();
   }
 
-  // 手動支出登録
   async function saveManualTransaction() {
     const amount = document.getElementById('man-amount').value;
     if (!amount) { alert("金額を入力してください"); return; }
@@ -394,7 +362,6 @@
     resetRegisterForm();
   }
 
-  // 口座振替登録
   async function saveTransferTransaction() {
     const fromAcc = document.getElementById('trans-from-account').value;
     const toAcc = document.getElementById('trans-to-account').value;
@@ -421,7 +388,6 @@
     resetRegisterForm();
   }
 
-  // フォームリセット
   function resetRegisterForm() {
     document.getElementById('file-input').value = "";
     document.getElementById('preview').style.display = 'none';
@@ -435,8 +401,6 @@
     fetchInitialData();
     switchTab('dashboard');
   }
-
-  // --- 設定変更処理群 ---
 
   async function saveModelSetting() {
     const model = document.getElementById('setting-model').value;
@@ -465,7 +429,6 @@
     fetchInitialData();
   }
 
-  // ファイルプレビュー処理
   document.getElementById('file-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
