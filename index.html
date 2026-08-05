@@ -48,7 +48,6 @@
     .account-list-item input { width: 45%; margin-top: 0; }
     .account-list-item button { width: auto; padding: 6px 10px; margin-top: 0; font-size: 0.85em; }
 
-    /* 利用履歴リスト */
     .history-list { margin-top: 15px; max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
     .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
     .history-item:hover { background: #f8f9fa; }
@@ -57,7 +56,6 @@
     .history-sub { font-size: 0.8em; color: #777; margin-top: 3px; }
     .history-amount { font-weight: bold; font-size: 1em; }
 
-    /* モーダル (編集ポップアップ) */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal-card { background: #fff; width: 92%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
@@ -74,7 +72,6 @@
 
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
 
-<!-- 詳細・編集モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -96,7 +93,6 @@
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
-  <!-- 1. ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <h3>💰 口座残高一覧</h3>
     <div class="account-grid" id="account-container"></div>
@@ -115,7 +111,6 @@
     </div>
   </div>
 
-  <!-- 2. 登録 -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs">
       <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
@@ -123,7 +118,6 @@
       <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
     </div>
 
-    <!-- AIレシート -->
     <div id="mode-ai" class="sub-tab-content">
       <label>📷 レシート撮影 / 選択</label>
       <input type="file" id="file-input" accept="image/*" capture="environment">
@@ -144,7 +138,6 @@
       </div>
     </div>
 
-    <!-- 手入力支出 / 収入 -->
     <div id="mode-manual" class="sub-tab-content" style="display: none;">
       <label>種別</label>
       <select id="man-type" onchange="toggleManualTypeUI()">
@@ -153,7 +146,7 @@
       </select>
 
       <label>日付</label><input type="date" id="man-date">
-      <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、給与、副食費">
+      <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与">
       <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
       <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
       <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
@@ -162,7 +155,6 @@
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
-    <!-- 口座振替 -->
     <div id="mode-transfer" class="sub-tab-content" style="display: none;">
       <label>日付</label><input type="date" id="trans-date">
       <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
@@ -174,7 +166,6 @@
     </div>
   </div>
 
-  <!-- 3. 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     
@@ -255,15 +246,19 @@
     document.getElementById('lbl-man-account').innerText = type === '収入' ? '入金先口座' : '出金元口座';
   }
 
+  // ★Safari/iOS通信制御（CORS/302リダイレクト）超互換仕様★
   async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
     showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
       const res = await fetch(GAS_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain" },
+        mode: "cors",
+        redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
+      
       const json = await res.json();
       showLoader(false);
       
@@ -406,7 +401,6 @@
     }).join('');
   }
 
-  // ポップアップ詳細モーダル (修正＆削除フォーム)
   function showDetailModal(data, isFc) {
     const titleEl = document.getElementById('modal-type-title');
     const bodyEl = document.getElementById('modal-content-body');
