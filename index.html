@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>俺の家計簿 Pro</title>
-  <!-- FullCalendar & Chart.js CDN -->
+  <title>wagatsuma's家計簿 Pro</title>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -37,12 +36,31 @@
     .btn-outline { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 8px; margin-top: 10px;}
 
     #preview { max-width: 100%; margin-top: 10px; display: none; border-radius: 8px; }
-    #calendar { margin-top: 20px; font-size: 0.85em; }
+    #calendar { margin-top: 20px; font-size: 0.85em; cursor: pointer; }
     
     .setting-section { border-top: 2px dashed #eee; margin-top: 25px; padding-top: 15px; }
     .account-list-item { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #eee; }
     .account-list-item input { width: 45%; margin-top: 0; }
     .account-list-item button { width: auto; padding: 6px 10px; margin-top: 0; font-size: 0.85em; }
+
+    /* 利用履歴リスト */
+    .history-list { margin-top: 15px; max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .history-item:hover { background: #f8f9fa; }
+    .history-item:last-child { border-bottom: none; }
+    .history-store { font-weight: bold; font-size: 0.95em; }
+    .history-sub { font-size: 0.8em; color: #777; margin-top: 3px; }
+    .history-amount { font-weight: bold; font-size: 1em; color: #d9534f; }
+
+    /* モーダル (詳細ポップアップ) */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 450px; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-header h3 { margin: 0; font-size: 1.2em; }
+    .modal-close { cursor: pointer; font-size: 1.5em; font-weight: bold; color: #888; border: none; background: none; padding: 0; width: auto; margin-top: 0; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #f0f0f0; font-size: 0.9em; }
+    .detail-label { color: #666; font-weight: bold; }
+    .detail-val { font-weight: bold; color: #333; text-align: right; }
 
     #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.1em; color: #007bff; }
     .chart-container { position: relative; margin-top: 20px; margin-bottom: 30px; height: 250px; }
@@ -52,6 +70,18 @@
 
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
 
+<!-- 詳細ポップアップモーダル -->
+<div id="detail-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-type-title">取引詳細</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modal-content-body"></div>
+    <div id="modal-receipt-container" style="margin-top: 15px; text-align: center;"></div>
+  </div>
+</div>
+
 <div class="container">
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
@@ -59,6 +89,7 @@
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
+  <!-- ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <h3>💰 口座残高一覧</h3>
     <div class="account-grid" id="account-container"></div>
@@ -68,10 +99,16 @@
       <canvas id="monthlyChart"></canvas>
     </div>
 
-    <h3>📅 支出カレンダー</h3>
+    <h3>📅 支出カレンダー (タップで詳細)</h3>
     <div id="calendar"></div>
+
+    <h3 style="margin-top: 30px;">📋 最近の利用履歴</h3>
+    <div class="history-list" id="history-container">
+      <div style="padding: 15px; text-align: center; color: #888;">読み込み中...</div>
+    </div>
   </div>
 
+  <!-- 登録 -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs">
       <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
@@ -121,6 +158,7 @@
     </div>
   </div>
 
+  <!-- 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     
@@ -147,7 +185,7 @@
 </div>
 
 <script>
-  // ★ここにご自身のGASデプロイURLを貼り付けてください★
+  // ★ここにGASのデプロイURLを貼り付けてください★
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -260,6 +298,7 @@
 
     renderChart(appData.monthlyStats);
     renderCalendar(appData.transactions, appData.forecasts);
+    renderHistoryList(appData.transactions);
   }
 
   function renderChart(monthlyStats) {
@@ -288,27 +327,97 @@
     });
   }
 
+  // カレンダーの描画 (イベントタップで詳細モーダルを開く)
   function renderCalendar(txs, fcs) {
     const calendarEl = document.getElementById('calendar');
     const events = [];
+
     txs.forEach(tx => {
-      if (tx.type === '支出') events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff' });
-      else if (tx.type === '振替') events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date, color: '#6c757d' });
+      if (tx.type === '支出') {
+        events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff', extendedProps: { rawData: tx, isFc: false } });
+      } else if (tx.type === '振替') {
+        events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date, color: '#6c757d', extendedProps: { rawData: tx, isFc: false } });
+      }
     });
-    fcs.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14' }); });
+
+    fcs.forEach(fc => {
+      events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14', extendedProps: { rawData: fc, isFc: true } });
+    });
 
     if (calendarInstance) calendarInstance.destroy();
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       events: events,
-      contentHeight: 'auto'
+      contentHeight: 'auto',
+      eventClick: function(info) {
+        showDetailModal(info.event.extendedProps.rawData, info.event.extendedProps.isFc);
+      }
     });
     calendarInstance.render();
   }
 
-  /**
-   * 画像を自動リサイズ・圧縮する処理（5MB→200KBへ軽量化）
-   */
+  // 利用履歴リストの描画
+  function renderHistoryList(txs) {
+    const container = document.getElementById('history-container');
+    if (!txs || txs.length === 0) {
+      container.innerHTML = '<div style="padding: 15px; text-align: center; color: #888;">履歴はありません。</div>';
+      return;
+    }
+
+    const sortedTxs = [...txs].reverse(); // 新しい順に並び替え
+    container.innerHTML = sortedTxs.map((tx, idx) => `
+      <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
+        <div class="history-main">
+          <div class="history-store">${tx.title}</div>
+          <div class="history-sub">${tx.date} | ${tx.type === '振替' ? '口座移動' : (tx.category || 'カテゴリなし')} (${tx.account})</div>
+        </div>
+        <div class="history-amount" style="color: ${tx.type === '振替' ? '#6c757d' : '#d9534f'}">
+          ¥${Number(tx.amount).toLocaleString()}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 詳細ポップアップモーダルの表示
+  function showDetailModal(data, isFc) {
+    const titleEl = document.getElementById('modal-type-title');
+    const bodyEl = document.getElementById('modal-content-body');
+    const receiptEl = document.getElementById('modal-receipt-container');
+
+    if (isFc) {
+      titleEl.innerText = "📅 見込み予定";
+      bodyEl.innerHTML = `
+        <div class="detail-row"><span class="detail-label">予定日</span><span class="detail-val">${data.date}</span></div>
+        <div class="detail-row"><span class="detail-label">内容</span><span class="detail-val">${data.title}</span></div>
+        <div class="detail-row"><span class="detail-label">想定金額</span><span class="detail-val">¥${Number(data.amount).toLocaleString()}</span></div>
+      `;
+      receiptEl.innerHTML = '';
+    } else {
+      titleEl.innerText = data.type === '振替' ? "🔄 口座振替詳細" : "💸 支出実績詳細";
+      bodyEl.innerHTML = `
+        <div class="detail-row"><span class="detail-label">日付</span><span class="detail-val">${data.date}</span></div>
+        <div class="detail-row"><span class="detail-label">内容 / 店舗</span><span class="detail-val">${data.title}</span></div>
+        <div class="detail-row"><span class="detail-label">金額</span><span class="detail-val">¥${Number(data.amount).toLocaleString()}</span></div>
+        ${data.type === '支出' ? `<div class="detail-row"><span class="detail-label">カテゴリ</span><span class="detail-val">${data.category || '-'}</span></div>` : ''}
+        <div class="detail-row"><span class="detail-label">${data.type === '振替' ? '出金口座' : '利用口座'}</span><span class="detail-val">${data.account || '-'}</span></div>
+        ${data.type === '振替' ? `<div class="detail-row"><span class="detail-label">入金口座</span><span class="detail-val">${data.toAccount || '-'}</span></div>` : ''}
+        <div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${data.note || '-'}</span></div>
+      `;
+
+      if (data.receiptUrl) {
+        receiptEl.innerHTML = `<a href="${data.receiptUrl}" target="_blank" style="color: #007bff; font-weight: bold; text-decoration: none;">📷 レシート画像を開く</a>`;
+      } else {
+        receiptEl.innerHTML = '';
+      }
+    }
+
+    document.getElementById('detail-modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('detail-modal').style.display = 'none';
+  }
+
   function compressImage(file, maxWidth = 1024, quality = 0.6) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -343,17 +452,13 @@
     });
   }
 
-  // ★AI解析ボタンの処理（自動圧縮を実行してから送信する）★
   document.getElementById('analyze-btn').addEventListener('click', async function() {
     if (!currentFile) return;
-
     try {
       showLoader(true, "写真を爆速圧縮中...🗜️");
-      // 巨大写真を長辺1024pxに超軽量化
       const compressedDataUrl = await compressImage(currentFile, 1024, 0.6);
       const base64Data = compressedDataUrl.split(',')[1];
 
-      // 超軽量データをGASへPOST送信（タイムアウトを防止）
       const res = await postToGAS({
         action: 'analyze',
         base64Data: base64Data,
@@ -366,7 +471,6 @@
       document.getElementById('ai-category').value = res.data.category || '';
       document.getElementById('ai-receipt-url').value = res.receiptUrl || '';
       document.getElementById('result-form').style.display = 'block';
-
     } catch (err) {
       console.error(err);
     }
