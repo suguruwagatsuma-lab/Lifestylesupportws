@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/kakeibo",
+      "destination": "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec"
+    }
+  ]
+}
