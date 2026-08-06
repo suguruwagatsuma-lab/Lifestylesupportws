@@ -14,16 +14,34 @@ export default async function handler(req, res) {
   try {
     const bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     
-    // Vercelサーバーが代わりにGASへ通信し、Google特有のリダイレクト(302)をサーバー内で処理する
-    const gasResponse = await fetch(GAS_WEB_APP_URL, {
+    // ★ここが超重要★ redirect: 'manual' にして自動追従を止め、迷子を防ぐ
+    const response = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: bodyData,
-      redirect: 'follow' // ★ここがSafariのエラーを防ぐ一番の魔法です★
+      redirect: 'manual' 
     });
 
-    const data = await gasResponse.json();
-    return res.status(200).json(data);
+    // GASが発行した「処理結果のURL（Location）」を確実に捕まえる
+    if (response.status === 302 || response.status === 303) {
+      const location = response.headers.get('location');
+      if (location) {
+        // 結果のURLに直接アクセスしてJSONを取得
+        const resultResponse = await fetch(location);
+        const data = await resultResponse.json();
+        return res.status(200).json(data);
+      }
+    }
+    
+    // 万が一リダイレクトされなかった場合
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      return res.status(200).json(data);
+    } catch(e) {
+      return res.status(500).json({ success: false, error: "GASからの応答が不正です: " + text });
+    }
+
   } catch (error) {
     console.error("Vercel Proxy Error:", error);
     return res.status(500).json({ success: false, error: "中継サーバーエラー: " + error.message });
