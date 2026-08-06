@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>wagatsuma’s家計簿</title>
-  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -26,6 +25,12 @@
     .sub-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: bold; color: #666; }
     .sub-tab.active { background: #fff; color: #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
+    /* メニューボタン（選択制UI） */
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 20px; }
+    .menu-btn { background: #fff; border: 2px solid #007bff; color: #007bff; padding: 15px 10px; border-radius: 8px; font-size: 0.95em; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .menu-btn:hover { background: #e9f5ff; }
+    .menu-icon { font-size: 1.8em; margin-bottom: 5px; }
+
     .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
     .account-card { background: #e9f5ff; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #cce5ff; }
     .account-card span { display: block; font-size: 1.1em; color: #007bff; margin-top: 4px; }
@@ -38,17 +43,19 @@
     .btn-secondary { background: #28a745; }
     .btn-warning { background: #fd7e14; }
     .btn-danger { background: #dc3545; }
-    .btn-outline { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 8px; margin-top: 10px;}
+    .btn-outline { background: transparent; color: #666; border: 1px solid #ccc; padding: 8px; margin-top: 0; margin-bottom: 15px;}
+    .btn-outline:hover { background: #f0f0f0; }
 
     #preview { max-width: 100%; margin-top: 10px; display: none; border-radius: 8px; }
-    #calendar { margin-top: 20px; font-size: 0.85em; cursor: pointer; }
+    #calendar { margin-top: 10px; font-size: 0.85em; cursor: pointer; }
     
     .setting-section { border-top: 2px dashed #eee; margin-top: 25px; padding-top: 15px; }
     .account-list-item { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #eee; }
     .account-list-item input { width: 45%; margin-top: 0; }
     .account-list-item button { width: auto; padding: 6px 10px; margin-top: 0; font-size: 0.85em; }
 
-    .history-list { margin-top: 15px; max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+    /* 履歴リスト */
+    .history-list { margin-top: 15px; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
     .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
     .history-item:hover { background: #f8f9fa; }
     .history-item:last-child { border-bottom: none; }
@@ -56,6 +63,7 @@
     .history-sub { font-size: 0.8em; color: #777; margin-top: 3px; }
     .history-amount { font-weight: bold; font-size: 1em; }
 
+    /* モーダル */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal-card { background: #fff; width: 92%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
@@ -65,13 +73,16 @@
     .modal-btn-group button { margin-top: 0; }
 
     #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 999; text-align: center; padding-top: 40vh; font-weight: bold; font-size: 1.1em; color: #007bff; }
-    .chart-container { position: relative; margin-top: 20px; margin-bottom: 30px; height: 250px; }
+    .chart-container { position: relative; margin-top: 10px; margin-bottom: 30px; height: 250px; }
+    
+    .summary-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; margin-top: 15px; border: 1px solid #ffeeba; display: none; }
   </style>
 </head>
 <body>
 
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
 
+<!-- 詳細・編集モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -93,24 +104,81 @@
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
 
+  <!-- 1. ダッシュボード（選択制UI） -->
   <div id="dashboard-tab" class="tab-content active">
-    <h3>💰 口座残高一覧</h3>
-    <div class="account-grid" id="account-container"></div>
     
-    <h3>📈 月別・口座別の支出推移</h3>
-    <div class="chart-container">
-      <canvas id="monthlyChart"></canvas>
+    <!-- メインメニュー画面 -->
+    <div id="dash-main">
+      <h3>💰 口座残高一覧</h3>
+      <div class="account-grid" id="account-container"></div>
+      
+      <h3>🔍 メニュー</h3>
+      <div class="menu-grid">
+        <div class="menu-btn" onclick="openDashView('calendar')">
+          <span class="menu-icon">📅</span>カレンダー
+        </div>
+        <div class="menu-btn" onclick="openDashView('charts')">
+          <span class="menu-icon">📈</span>推移グラフ
+        </div>
+        <div class="menu-btn" onclick="openDashView('history-account')">
+          <span class="menu-icon">🏦</span>口座別 履歴
+        </div>
+        <div class="menu-btn" onclick="openDashView('history-category')">
+          <span class="menu-icon">🏢</span>店舗・項目別
+        </div>
+        <div class="menu-btn" onclick="openDashView('history-all')">
+          <span class="menu-icon">📋</span>すべての履歴
+        </div>
+      </div>
     </div>
 
-    <h3>📅 支出カレンダー (タップで修正/削除)</h3>
-    <div id="calendar"></div>
-
-    <h3 style="margin-top: 30px;">📋 最近の利用履歴</h3>
-    <div class="history-list" id="history-container">
-      <div style="padding: 15px; text-align: center; color: #888;">読み込み中...</div>
+    <!-- ビューA：カレンダー -->
+    <div id="dash-calendar" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>📅 支出カレンダー (タップで修正/削除)</h3>
+      <div id="calendar"></div>
     </div>
+
+    <!-- ビューB：グラフ -->
+    <div id="dash-charts" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>📈 月別・口座別の支出推移</h3>
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ビューC：口座別履歴 -->
+    <div id="dash-history-account" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>🏦 口座別の利用履歴</h3>
+      <select id="filter-account" onchange="renderAccountHistory()">
+        <option value="">口座を選択してください</option>
+      </select>
+      <div class="history-list" id="history-container-account"></div>
+    </div>
+
+    <!-- ビューD：店舗・カテゴリ別履歴 -->
+    <div id="dash-history-category" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>🏢 店舗・項目(カテゴリ)別の履歴</h3>
+      <select id="filter-category" onchange="renderCategoryHistory()">
+        <option value="">項目を選択してください</option>
+      </select>
+      <div id="summary-category" class="summary-box"></div>
+      <div class="history-list" id="history-container-category"></div>
+    </div>
+
+    <!-- ビューE：すべての履歴 -->
+    <div id="dash-history-all" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>📋 すべての利用履歴</h3>
+      <div class="history-list" id="history-container-all"></div>
+    </div>
+
   </div>
 
+  <!-- 2. 登録 -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs">
       <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
@@ -118,6 +186,7 @@
       <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
     </div>
 
+    <!-- AIレシート -->
     <div id="mode-ai" class="sub-tab-content">
       <label>📷 レシート撮影 / 選択</label>
       <input type="file" id="file-input" accept="image/*" capture="environment">
@@ -138,6 +207,7 @@
       </div>
     </div>
 
+    <!-- 手入力 -->
     <div id="mode-manual" class="sub-tab-content" style="display: none;">
       <label>種別</label>
       <select id="man-type" onchange="toggleManualTypeUI()">
@@ -155,6 +225,7 @@
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
+    <!-- 振替 -->
     <div id="mode-transfer" class="sub-tab-content" style="display: none;">
       <label>日付</label><input type="date" id="trans-date">
       <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
@@ -166,6 +237,7 @@
     </div>
   </div>
 
+  <!-- 3. 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     
@@ -186,14 +258,14 @@
       <h4>＋ 新しい口座の追加</h4>
       <input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)">
       <input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)">
-      <button class="btn-outline" onclick="addNewAccount()">追加する</button>
+      <button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
     </div>
   </div>
 </div>
 
 <script>
-  // ★ここにGASのデプロイURLを貼り付けてください★
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
+  // VercelプロキシAPI
+  const GAS_URL = "/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null;
@@ -215,7 +287,7 @@
     if(tabId === 'dashboard') {
       document.querySelectorAll('.tab')[0].classList.add('active');
       document.getElementById('dashboard-tab').classList.add('active');
-      if(calendarInstance) calendarInstance.render();
+      backToDashMain(); // ダッシュボードタブに戻った時は必ずメインメニューを表示
     } else if(tabId === 'register') {
       document.querySelectorAll('.tab')[1].classList.add('active');
       document.getElementById('register-tab').classList.add('active');
@@ -228,7 +300,6 @@
   function switchSubTab(subMode) {
     document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
-
     if(subMode === 'ai') {
       document.querySelectorAll('.sub-tab')[0].classList.add('active');
       document.getElementById('mode-ai').style.display = 'block';
@@ -246,22 +317,17 @@
     document.getElementById('lbl-man-account').innerText = type === '収入' ? '入金先口座' : '出金元口座';
   }
 
-  // ★Safari/iOS通信制御（CORS/302リダイレクト）超互換仕様★
   async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
     showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
       const res = await fetch(GAS_URL, {
         method: "POST",
-        mode: "cors",
-        redirect: "follow",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      
       const json = await res.json();
       showLoader(false);
-      
       if (!json.success) {
         alert("エラーが発生しました:\n" + json.error);
         throw new Error(json.error);
@@ -279,11 +345,14 @@
     document.getElementById('global-loader').style.display = show ? 'block' : 'none';
   }
 
+  // 1. 初回データ読み込み（※ここでは重いカレンダーやグラフは描画しないため一瞬で終わる）
   async function fetchInitialData() {
-    const res = await postToGAS({ action: 'getInitialData' }, "高速読み込み中...⚡");
+    const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡");
     appData = res.data;
 
+    // 残高とプルダウンへのセット
     const accContainer = document.getElementById('account-container');
+    const filterAcc = document.getElementById('filter-account');
     const aiAcc = document.getElementById('ai-account');
     const manAcc = document.getElementById('man-account');
     const transFrom = document.getElementById('trans-from-account');
@@ -292,11 +361,12 @@
     
     accContainer.innerHTML = ''; aiAcc.innerHTML = ''; manAcc.innerHTML = '';
     transFrom.innerHTML = ''; transTo.innerHTML = ''; manageAccList.innerHTML = '';
+    filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
 
     for (const [name, val] of Object.entries(appData.accounts)) {
       accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span></div>`;
       const opt = `<option value="${name}">${name}</option>`;
-      aiAcc.innerHTML += opt; manAcc.innerHTML += opt; transFrom.innerHTML += opt; transTo.innerHTML += opt;
+      aiAcc.innerHTML += opt; manAcc.innerHTML += opt; transFrom.innerHTML += opt; transTo.innerHTML += opt; filterAcc.innerHTML += opt;
 
       manageAccList.innerHTML += `
         <div class="account-list-item">
@@ -310,13 +380,107 @@
     document.getElementById('ai-category').innerHTML = catOpts;
     document.getElementById('man-category').innerHTML = catOpts;
 
-    document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
+    // 店舗・カテゴリフィルター用のリスト作成
+    const uniqueStores = [...new Set(appData.transactions.filter(t => t.type==='支出' && t.store).map(t => t.store))].sort();
+    const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
+    const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
+    document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
 
-    renderChart(appData.monthlyStats);
-    renderCalendar(appData.transactions, appData.forecasts);
-    renderHistoryList(appData.transactions);
+    document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
   }
 
+  // --- ダッシュボードのドリルダウン（メニュー選択）制御 ---
+  function backToDashMain() {
+    document.getElementById('dash-main').style.display = 'block';
+    document.getElementById('dash-calendar').style.display = 'none';
+    document.getElementById('dash-charts').style.display = 'none';
+    document.getElementById('dash-history-account').style.display = 'none';
+    document.getElementById('dash-history-category').style.display = 'none';
+    document.getElementById('dash-history-all').style.display = 'none';
+  }
+
+  function openDashView(view) {
+    document.getElementById('dash-main').style.display = 'none';
+    document.getElementById(`dash-${view}`).style.display = 'block';
+
+    // 画面を開いたタイミングで初めて重い処理（グラフ・カレンダー）を描画する
+    if (view === 'calendar') renderCalendar(appData.transactions, appData.forecasts);
+    if (view === 'charts') renderChart(appData.monthlyStats);
+    if (view === 'history-all') renderHistoryList(appData.transactions, 'history-container-all');
+  }
+
+  // --- 各種履歴のレンダリング ---
+  function createHistoryHtml(tx) {
+    let amtColor = '#d9534f';
+    let prefix = '-¥';
+    if (tx.type === '収入') { amtColor = '#28a745'; prefix = '+¥'; }
+    else if (tx.type === '振替') { amtColor = '#6c757d'; prefix = '¥'; }
+
+    return `
+      <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
+        <div class="history-main">
+          <div class="history-store">${tx.title}</div>
+          <div class="history-sub">${tx.date} | ${tx.type} (${tx.account})</div>
+        </div>
+        <div class="history-amount" style="color: ${amtColor}">
+          ${prefix}${Number(tx.amount).toLocaleString()}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderHistoryList(txs, containerId) {
+    const container = document.getElementById(containerId);
+    if (!txs || txs.length === 0) {
+      container.innerHTML = '<div style="padding: 15px; text-align: center; color: #888;">履歴はありません。</div>';
+      return;
+    }
+    const sortedTxs = [...txs].reverse();
+    container.innerHTML = sortedTxs.map(tx => createHistoryHtml(tx)).join('');
+  }
+
+  // 口座別の履歴絞り込み
+  function renderAccountHistory() {
+    const acc = document.getElementById('filter-account').value;
+    if (!acc) {
+      document.getElementById('history-container-account').innerHTML = '';
+      return;
+    }
+    const filtered = appData.transactions.filter(t => t.account === acc || t.toAccount === acc);
+    renderHistoryList(filtered, 'history-container-account');
+  }
+
+  // カテゴリ・店舗別の履歴絞り込み
+  function renderCategoryHistory() {
+    const val = document.getElementById('filter-category').value;
+    const summaryBox = document.getElementById('summary-category');
+    if (!val) {
+      document.getElementById('history-container-category').innerHTML = '';
+      summaryBox.style.display = 'none';
+      return;
+    }
+
+    let filtered = [];
+    let title = '';
+    if (val.startsWith('cat_')) {
+      const cat = val.replace('cat_', '');
+      filtered = appData.transactions.filter(t => t.type === '支出' && t.category === cat);
+      title = `カテゴリ「${cat}」`;
+    } else if (val.startsWith('store_')) {
+      const store = val.replace('store_', '');
+      filtered = appData.transactions.filter(t => t.type === '支出' && t.store === store);
+      title = `店舗「${store}」`;
+    }
+
+    // 合計金額の計算
+    const totalAmount = filtered.reduce((sum, t) => sum + Number(t.amount), 0);
+    summaryBox.style.display = 'block';
+    summaryBox.innerHTML = `${title} の支出合計:<br><span style="font-size:1.3em; color:#d9534f;">¥${totalAmount.toLocaleString()}</span>`;
+
+    renderHistoryList(filtered, 'history-container-category');
+  }
+
+  // --- グラフとカレンダー ---
   function renderChart(monthlyStats) {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const months = Object.keys(monthlyStats).sort();
@@ -373,45 +537,17 @@
     calendarInstance.render();
   }
 
-  function renderHistoryList(txs) {
-    const container = document.getElementById('history-container');
-    if (!txs || txs.length === 0) {
-      container.innerHTML = '<div style="padding: 15px; text-align: center; color: #888;">履歴はありません。</div>';
-      return;
-    }
-
-    const sortedTxs = [...txs].reverse();
-    container.innerHTML = sortedTxs.map((tx) => {
-      let amtColor = '#d9534f';
-      let prefix = '-¥';
-      if (tx.type === '収入') { amtColor = '#28a745'; prefix = '+¥'; }
-      else if (tx.type === '振替') { amtColor = '#6c757d'; prefix = '¥'; }
-
-      return `
-        <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
-          <div class="history-main">
-            <div class="history-store">${tx.title}</div>
-            <div class="history-sub">${tx.date} | ${tx.type} (${tx.account})</div>
-          </div>
-          <div class="history-amount" style="color: ${amtColor}">
-            ${prefix}${Number(tx.amount).toLocaleString()}
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
+  // --- モーダル（詳細・修正・削除） ---
   function showDetailModal(data, isFc) {
     const titleEl = document.getElementById('modal-type-title');
     const bodyEl = document.getElementById('modal-content-body');
 
     if (isFc) {
-      titleEl.innerText = "📅 見込み予定 (読み取り専用)";
+      titleEl.innerText = "📅 見込み予定 (読取専用)";
       bodyEl.innerHTML = `
         <label>日付</label><input type="text" value="${data.date}" disabled>
         <label>予定内容</label><input type="text" value="${data.title}" disabled>
         <label>想定金額</label><input type="text" value="¥${Number(data.amount).toLocaleString()}" disabled>
-        <p style="font-size:0.8em; color:#888; margin-top:15px;">※カレンダーから同期された予定はカレンダー側で編集してください。</p>
       `;
     } else {
       titleEl.innerText = "✏️ 取引データの修正・削除";
@@ -427,9 +563,8 @@
           <option value="収入" ${data.type === '収入' ? 'selected' : ''}>💰 収入</option>
           <option value="振替" ${data.type === '振替' ? 'selected' : ''}>🔄 口座振替</option>
         </select>
-        
         <label>日付</label><input type="date" id="edit-date" value="${data.date}">
-        <label>店舗・用途・内容</label><input type="text" id="edit-store" value="${data.title || ''}">
+        <label>内容/店舗</label><input type="text" id="edit-store" value="${data.title || ''}">
         <label>金額</label><input type="number" id="edit-amount" value="${data.amount}">
         <label>カテゴリ</label><select id="edit-category">${catOpts}</select>
         <label>対象口座 (出金元)</label><select id="edit-account">${accOpts}</select>
@@ -443,13 +578,10 @@
         </div>
       `;
     }
-
     document.getElementById('detail-modal').style.display = 'flex';
   }
 
-  function closeModal() {
-    document.getElementById('detail-modal').style.display = 'none';
-  }
+  function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
 
   async function updateTransactionSubmit() {
     const payload = {
@@ -463,7 +595,6 @@
       toAccount: document.getElementById('edit-to-account').value,
       note: document.getElementById('edit-note').value
     };
-
     await postToGAS({ action: 'updateTransaction', data: payload }, "データ修正中...");
     alert("修正を保存しました！");
     closeModal();
@@ -471,44 +602,30 @@
   }
 
   async function deleteTransactionSubmit(id) {
-    if (!confirm("この取引データを削除してもよろしいですか？")) return;
+    if (!confirm("本当に削除しますか？")) return;
     await postToGAS({ action: 'deleteTransaction', id: id }, "データ削除中...");
-    alert("データを削除しました。");
+    alert("削除しました。");
     closeModal();
     fetchInitialData();
   }
 
+  // --- 登録機能（画像圧縮含む） ---
   function compressImage(file, maxWidth = 1024, quality = 0.6) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxWidth) {
-              width = Math.round((width * maxWidth) / height);
-              height = maxWidth;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
+          let width = img.width, height = img.height;
+          if (width > height) { if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; } } 
+          else { if (height > maxWidth) { width = Math.round((width * maxWidth) / height); height = maxWidth; } }
+          const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
           resolve(canvas.toDataURL('image/jpeg', quality));
         };
-        img.onerror = reject;
-        img.src = e.target.result;
+        img.onerror = reject; img.src = e.target.result;
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onerror = reject; reader.readAsDataURL(file);
     });
   }
 
@@ -517,13 +634,7 @@
     try {
       showLoader(true, "写真を爆速圧縮中...🗜️");
       const compressedDataUrl = await compressImage(currentFile, 1024, 0.6);
-      const base64Data = compressedDataUrl.split(',')[1];
-
-      const res = await postToGAS({
-        action: 'analyze',
-        base64Data: base64Data,
-        mimeType: 'image/jpeg'
-      }, "Geminiで高速解析中...🤖");
+      const res = await postToGAS({ action: 'analyze', base64Data: compressedDataUrl.split(',')[1], mimeType: 'image/jpeg' }, "Geminiで高速解析中...🤖");
 
       document.getElementById('ai-date').value = res.data.date || '';
       document.getElementById('ai-store').value = res.data.store || '';
@@ -531,89 +642,47 @@
       document.getElementById('ai-category').value = res.data.category || '';
       document.getElementById('ai-receipt-url').value = res.receiptUrl || '';
       document.getElementById('result-form').style.display = 'block';
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   });
 
   async function saveAiTransaction() {
-    await postToGAS({
-      action: 'saveTransaction',
-      data: {
-        type: '支出',
-        date: document.getElementById('ai-date').value,
-        store: document.getElementById('ai-store').value,
-        amount: document.getElementById('ai-amount').value,
-        category: document.getElementById('ai-category').value,
-        account: document.getElementById('ai-account').value,
-        note: document.getElementById('ai-note').value,
-        receiptUrl: document.getElementById('ai-receipt-url').value
-      }
-    }, "データ保存中...");
-    
-    alert("登録完了しました！");
-    resetRegisterForm();
+    await postToGAS({ action: 'saveTransaction', data: {
+      type: '支出', date: document.getElementById('ai-date').value, store: document.getElementById('ai-store').value,
+      amount: document.getElementById('ai-amount').value, category: document.getElementById('ai-category').value,
+      account: document.getElementById('ai-account').value, note: document.getElementById('ai-note').value,
+      receiptUrl: document.getElementById('ai-receipt-url').value
+    }}, "データ保存中...");
+    alert("登録完了しました！"); resetRegisterForm();
   }
 
   async function saveManualTransaction() {
     const amount = document.getElementById('man-amount').value;
     if (!amount) { alert("金額を入力してください"); return; }
-
-    await postToGAS({
-      action: 'saveTransaction',
-      data: {
-        type: document.getElementById('man-type').value,
-        date: document.getElementById('man-date').value.replace(/-/g, '/'),
-        store: document.getElementById('man-store').value,
-        amount: amount,
-        category: document.getElementById('man-category').value,
-        account: document.getElementById('man-account').value,
-        note: document.getElementById('man-note').value
-      }
-    }, "手入力データ保存中...");
-
-    alert("登録完了しました！");
-    resetRegisterForm();
+    await postToGAS({ action: 'saveTransaction', data: {
+      type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'),
+      store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value,
+      account: document.getElementById('man-account').value, note: document.getElementById('man-note').value
+    }}, "手入力データ保存中...");
+    alert("登録完了しました！"); resetRegisterForm();
   }
 
   async function saveTransferTransaction() {
-    const fromAcc = document.getElementById('trans-from-account').value;
-    const toAcc = document.getElementById('trans-to-account').value;
-    const amount = document.getElementById('trans-amount').value;
-
-    if (fromAcc === toAcc) { alert("振替元と振替先には異なる口座を選んでください"); return; }
+    const fromAcc = document.getElementById('trans-from-account').value, toAcc = document.getElementById('trans-to-account').value, amount = document.getElementById('trans-amount').value;
+    if (fromAcc === toAcc) { alert("異なる口座を選んでください"); return; }
     if (!amount) { alert("金額を入力してください"); return; }
-
-    await postToGAS({
-      action: 'saveTransaction',
-      data: {
-        type: '振替',
-        date: document.getElementById('trans-date').value.replace(/-/g, '/'),
-        store: '口座間移動',
-        amount: amount,
-        category: '口座振替',
-        account: fromAcc,
-        toAccount: toAcc,
-        note: document.getElementById('trans-note').value
-      }
-    }, "口座間移動を処理中...");
-
-    alert("口座間移動を登録しました！");
-    resetRegisterForm();
+    await postToGAS({ action: 'saveTransaction', data: {
+      type: '振替', date: document.getElementById('trans-date').value.replace(/-/g, '/'), store: '口座間移動',
+      amount: amount, category: '口座振替', account: fromAcc, toAccount: toAcc, note: document.getElementById('trans-note').value
+    }}, "口座間移動を処理中...");
+    alert("口座間移動を登録しました！"); resetRegisterForm();
   }
 
   function resetRegisterForm() {
-    document.getElementById('file-input').value = "";
-    document.getElementById('preview').style.display = 'none';
-    document.getElementById('result-form').style.display = 'none';
-    document.getElementById('man-store').value = "";
-    document.getElementById('man-amount').value = "";
-    document.getElementById('trans-amount').value = "";
-    currentFile = null;
-    document.getElementById('analyze-btn').disabled = true;
-
-    fetchInitialData();
-    switchTab('dashboard');
+    document.getElementById('file-input').value = ""; document.getElementById('preview').style.display = 'none';
+    document.getElementById('result-form').style.display = 'none'; document.getElementById('man-store').value = "";
+    document.getElementById('man-amount').value = ""; document.getElementById('trans-amount').value = "";
+    currentFile = null; document.getElementById('analyze-btn').disabled = true;
+    fetchInitialData(); switchTab('dashboard');
   }
 
   async function saveModelSetting() {
@@ -624,35 +693,27 @@
 
   async function saveAccount(name, balance) {
     await postToGAS({ action: 'saveAccount', accountName: name, initialBalance: Number(balance) }, "口座情報更新中...");
-    alert(`口座「${name}」の初期金額を更新しました。`);
-    fetchInitialData();
+    alert(`口座「${name}」の初期金額を更新しました。`); fetchInitialData();
   }
 
   async function addNewAccount() {
-    const name = document.getElementById('new-account-name').value;
-    const bal = document.getElementById('new-account-balance').value;
+    const name = document.getElementById('new-account-name').value, bal = document.getElementById('new-account-balance').value;
     if (!name) { alert("口座名を入力してください"); return; }
     await saveAccount(name, bal || 0);
-    document.getElementById('new-account-name').value = '';
-    document.getElementById('new-account-balance').value = '';
+    document.getElementById('new-account-name').value = ''; document.getElementById('new-account-balance').value = '';
   }
 
   async function syncCalendar() {
-    const res = await postToGAS({ action: 'syncCalendar' }, "Googleカレンダーと同期中...🗓️");
-    alert(res.message);
-    fetchInitialData();
+    const res = await postToGAS({ action: 'syncCalendar' }, "カレンダーと同期中...🗓️");
+    alert(res.message); fetchInitialData();
   }
 
   document.getElementById('file-input').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    currentFile = file;
+    const file = e.target.files[0]; if (!file) return; currentFile = file;
     const reader = new FileReader();
     reader.onload = function(e) {
-      document.getElementById('preview').src = e.target.result;
-      document.getElementById('preview').style.display = 'block';
-      document.getElementById('analyze-btn').disabled = false;
-      document.getElementById('result-form').style.display = 'none';
+      document.getElementById('preview').src = e.target.result; document.getElementById('preview').style.display = 'block';
+      document.getElementById('analyze-btn').disabled = false; document.getElementById('result-form').style.display = 'none';
     };
     reader.readAsDataURL(file);
   });
