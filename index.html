@@ -137,7 +137,6 @@
       <div class="history-list" id="history-container-account"></div>
     </div>
 
-    <!-- ★修正箇所：フリーワード検索を削除し、プルダウン選択のみに戻しました★ -->
     <div id="dash-history-category" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🏢 店舗・項目別の履歴</h3>
@@ -258,7 +257,7 @@
 </div>
 
 <script>
-  // ★Vercelの中継APIアドレス★
+  // ★現在設定されているGASのURL（通信エラーが出ていないためそのまま維持します）と思いましたが、apiファイルを作っているので、そっちに切り替えます★
   const GAS_URL = "/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -373,10 +372,11 @@
     // カテゴリ管理のバッジ描画
     document.getElementById('manage-category-list').innerHTML = appData.categories.map(c => `<div class="category-badge">${c}</div>`).join('');
 
-    // ★カテゴリと店舗の両方を1つのプルダウンにまとめる★
-    const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.store).map(t => t.store))].sort();
+    // ★修正：店舗名の抽出元を t.title に変更して確実に取得する★
+    const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.title && t.title !== '取引').map(t => t.title))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
+    
     document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
 
     document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
@@ -430,7 +430,7 @@
     renderHistoryList(filtered, 'history-container-account');
   }
 
-  // ★プルダウンからの絞り込み処理（カテゴリ・店舗どちらにも対応）★
+  // ★プルダウンからの絞り込み処理★
   function renderCategoryHistory() {
     const val = document.getElementById('filter-category').value;
     const summaryBox = document.getElementById('summary-category');
@@ -443,7 +443,8 @@
       title = `カテゴリ「${cat}」`;
     } else if (val.startsWith('store_')) {
       const store = val.replace('store_', '');
-      filtered = appData.transactions.filter(t => t.type === '支出' && t.store === store);
+      // ★検索対象を t.store ではなく t.title に修正★
+      filtered = appData.transactions.filter(t => t.type === '支出' && t.title === store);
       title = `店舗「${store}」`;
     }
 
