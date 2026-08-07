@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>wagatsuma’s家計簿</title>
+  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -32,7 +33,7 @@
 
     .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
     .account-card { background: #e9f5ff; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #cce5ff; }
-    .account-card span { display: block; font-size: 1.2em; color: #007bff; margin-top: 4px; }
+    .account-card span { display: block; font-size: 1.1em; color: #007bff; margin-top: 4px; }
 
     label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.85em; color: #555; }
     input, select { width: 100%; padding: 10px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
@@ -119,7 +120,6 @@
       </div>
     </div>
 
-    <!-- ビュー群 -->
     <div id="dash-calendar" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📅 支出カレンダー (タップで修正/削除)</h3>
@@ -136,13 +136,23 @@
       <select id="filter-account" onchange="renderAccountHistory()"><option value="">口座を選択してください</option></select>
       <div class="history-list" id="history-container-account"></div>
     </div>
+
+    <!-- ★修正箇所：フリーワード検索を削除し、プルダウン選択のみに戻しました★ -->
     <div id="dash-history-category" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>🏢 店舗・項目(カテゴリ)別の履歴</h3>
-      <select id="filter-category" onchange="renderCategoryHistory()"><option value="">項目を選択してください</option></select>
+      <h3>🏢 店舗・項目別の履歴</h3>
+      
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
+        <label style="margin-top: 0;">🔍 履歴を絞り込む</label>
+        <select id="filter-category" onchange="renderCategoryHistory()">
+          <option value="">カテゴリ・店舗を選択してください</option>
+        </select>
+      </div>
+
       <div id="summary-category" class="summary-box"></div>
       <div class="history-list" id="history-container-category"></div>
     </div>
+
     <div id="dash-history-all" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📋 すべての利用履歴</h3>
@@ -173,6 +183,7 @@
         <label>出金元口座</label><select id="ai-account"></select>
         <label>メモ</label><input type="text" id="ai-note">
         <input type="hidden" id="ai-receipt-url">
+
         <button class="btn-secondary" onclick="saveAiTransaction()">💾 確定して登録</button>
       </div>
     </div>
@@ -183,12 +194,14 @@
         <option value="支出">💸 支出 (マイナス)</option>
         <option value="収入">💰 収入 (プラス)</option>
       </select>
+
       <label>日付</label><input type="date" id="man-date">
       <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与">
       <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
       <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
       <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
       <label>メモ（任意）</label><input type="text" id="man-note">
+
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
@@ -198,6 +211,7 @@
       <label>振替先 (入金口座)</label><select id="trans-to-account"></select>
       <label>移動金額</label><input type="number" id="trans-amount" placeholder="例: 30000">
       <label>メモ（任意）</label><input type="text" id="trans-note" placeholder="例: チャージ、ATM引き出し">
+
       <button class="btn-warning" onclick="saveTransferTransaction()">🔄 口座間移動を実行</button>
     </div>
   </div>
@@ -219,6 +233,7 @@
     <div class="setting-section">
       <h3>🏦 口座情報の管理</h3>
       <div id="manage-account-list"></div>
+
       <h4>＋ 新しい口座の追加</h4>
       <input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)">
       <input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)">
@@ -262,6 +277,7 @@
   function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    
     if(tabId === 'dashboard') {
       document.querySelectorAll('.tab')[0].classList.add('active');
       document.getElementById('dashboard-tab').classList.add('active');
@@ -333,12 +349,10 @@
     filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
 
     for (const [name, val] of Object.entries(appData.accounts)) {
-      // 未来の残高と現在の残高が違う場合のみ、未来予測を表示する
       let futureHtml = '';
       if (val.current !== val.future) {
         futureHtml = `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(未来の見込: ¥${val.future.toLocaleString()})</span>`;
       }
-      
       accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span>${futureHtml}</div>`;
       
       const opt = `<option value="${name}">${name}</option>`;
@@ -359,7 +373,8 @@
     // カテゴリ管理のバッジ描画
     document.getElementById('manage-category-list').innerHTML = appData.categories.map(c => `<div class="category-badge">${c}</div>`).join('');
 
-    const uniqueStores = [...new Set(appData.transactions.filter(t => t.type==='支出' && t.store).map(t => t.store))].sort();
+    // ★カテゴリと店舗の両方を1つのプルダウンにまとめる★
+    const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.store).map(t => t.store))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
     document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
@@ -415,6 +430,7 @@
     renderHistoryList(filtered, 'history-container-account');
   }
 
+  // ★プルダウンからの絞り込み処理（カテゴリ・店舗どちらにも対応）★
   function renderCategoryHistory() {
     const val = document.getElementById('filter-category').value;
     const summaryBox = document.getElementById('summary-category');
@@ -430,6 +446,7 @@
       filtered = appData.transactions.filter(t => t.type === '支出' && t.store === store);
       title = `店舗「${store}」`;
     }
+
     const totalAmount = filtered.reduce((sum, t) => sum + Number(t.amount), 0);
     summaryBox.style.display = 'block';
     summaryBox.innerHTML = `${title} の支出合計:<br><span style="font-size:1.3em; color:#d9534f;">¥${totalAmount.toLocaleString()}</span>`;
@@ -625,7 +642,6 @@
     document.getElementById('new-account-name').value = ''; document.getElementById('new-account-balance').value = '';
   }
 
-  // ★新規追加: カテゴリ追加関数★
   async function addNewCategory() {
     const name = document.getElementById('new-category-name').value;
     if (!name) { alert("カテゴリ名を入力してください"); return; }
