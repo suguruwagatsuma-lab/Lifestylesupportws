@@ -219,7 +219,6 @@
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
 
-    <!-- カテゴリ管理 -->
     <div class="setting-section" style="border-top: none; margin-top: 0; padding-top: 0;">
       <h3>📁 カテゴリの管理</h3>
       <div id="manage-category-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
@@ -228,7 +227,6 @@
       <button class="btn-outline" style="border-color:#28a745; color:#28a745;" onclick="addNewCategory()">追加する</button>
     </div>
 
-    <!-- 口座管理 -->
     <div class="setting-section">
       <h3>🏦 口座情報の管理</h3>
       <div id="manage-account-list"></div>
@@ -239,14 +237,12 @@
       <button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
     </div>
 
-    <!-- カレンダー同期 -->
     <div class="setting-section">
       <h3>📅 Googleカレンダー同期</h3>
       <p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p>
       <button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
     </div>
 
-    <!-- モデル設定 -->
     <div class="setting-section">
       <h3>🤖 AIモデル設定</h3>
       <label>Gemini モデルバージョン</label>
@@ -257,7 +253,7 @@
 </div>
 
 <script>
-  // ★現在設定されているGASのURL（通信エラーが出ていないためそのまま維持します）と思いましたが、apiファイルを作っているので、そっちに切り替えます★
+  // ★Vercelの中継APIアドレス★
   const GAS_URL = "/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -369,10 +365,8 @@
     document.getElementById('ai-category').innerHTML = catOpts;
     document.getElementById('man-category').innerHTML = catOpts;
 
-    // カテゴリ管理のバッジ描画
     document.getElementById('manage-category-list').innerHTML = appData.categories.map(c => `<div class="category-badge">${c}</div>`).join('');
 
-    // ★修正：店舗名の抽出元を t.title に変更して確実に取得する★
     const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.title && t.title !== '取引').map(t => t.title))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
@@ -423,14 +417,16 @@
     container.innerHTML = sortedTxs.map(tx => createHistoryHtml(tx)).join('');
   }
 
+  // ★修正箇所：口座別履歴で、シートの過去データ(H列)の汚れを無視する防弾設計★
   function renderAccountHistory() {
     const acc = document.getElementById('filter-account').value;
     if (!acc) { document.getElementById('history-container-account').innerHTML = ''; return; }
-    const filtered = appData.transactions.filter(t => t.account === acc || t.toAccount === acc);
+    
+    const filtered = appData.transactions.filter(t => t.account === acc || (t.type === '振替' && t.toAccount === acc));
+    
     renderHistoryList(filtered, 'history-container-account');
   }
 
-  // ★プルダウンからの絞り込み処理★
   function renderCategoryHistory() {
     const val = document.getElementById('filter-category').value;
     const summaryBox = document.getElementById('summary-category');
@@ -443,7 +439,6 @@
       title = `カテゴリ「${cat}」`;
     } else if (val.startsWith('store_')) {
       const store = val.replace('store_', '');
-      // ★検索対象を t.store ではなく t.title に修正★
       filtered = appData.transactions.filter(t => t.type === '支出' && t.title === store);
       title = `店舗「${store}」`;
     }
@@ -533,6 +528,8 @@
   function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
 
   async function updateTransactionSubmit() {
+    if (!document.getElementById('edit-account').value) { alert("対象口座を選択してください"); return; }
+    
     const payload = {
       id: document.getElementById('edit-id').value, type: document.getElementById('edit-type').value,
       date: document.getElementById('edit-date').value.replace(/-/g, '/'), store: document.getElementById('edit-store').value,
@@ -586,10 +583,12 @@
   });
 
   async function saveAiTransaction() {
+    const acc = document.getElementById('ai-account').value;
+    if (!acc) { alert("出金元口座を選択してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
       type: '支出', date: document.getElementById('ai-date').value, store: document.getElementById('ai-store').value,
       amount: document.getElementById('ai-amount').value, category: document.getElementById('ai-category').value,
-      account: document.getElementById('ai-account').value, note: document.getElementById('ai-note').value,
+      account: acc, note: document.getElementById('ai-note').value,
       receiptUrl: document.getElementById('ai-receipt-url').value
     }}, "データ保存中...");
     alert("登録完了しました！"); resetRegisterForm();
@@ -597,17 +596,20 @@
 
   async function saveManualTransaction() {
     const amount = document.getElementById('man-amount').value;
+    const acc = document.getElementById('man-account').value;
     if (!amount) { alert("金額を入力してください"); return; }
+    if (!acc) { alert("対象口座を選択してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
       type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'),
       store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value,
-      account: document.getElementById('man-account').value, note: document.getElementById('man-note').value
+      account: acc, note: document.getElementById('man-note').value
     }}, "手入力データ保存中...");
     alert("登録完了しました！"); resetRegisterForm();
   }
 
   async function saveTransferTransaction() {
     const fromAcc = document.getElementById('trans-from-account').value, toAcc = document.getElementById('trans-to-account').value, amount = document.getElementById('trans-amount').value;
+    if (!fromAcc || !toAcc) { alert("出金口座と入金口座を両方選択してください"); return; }
     if (fromAcc === toAcc) { alert("異なる口座を選んでください"); return; }
     if (!amount) { alert("金額を入力してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
