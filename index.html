@@ -106,7 +106,7 @@
   <div id="dashboard-tab" class="tab-content active">
     <div id="dash-main">
       <h3>💰 現在の口座残高</h3>
-      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の確定分は下の「見込」として表示</p>
+      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示されます。</p>
       <div class="account-grid" id="account-container"></div>
       
       <h3>🔍 メニュー</h3>
@@ -163,7 +163,7 @@
       <div class="history-list" id="history-container-all"></div>
     </div>
 
-    <!-- ★新規: 未来シミュレーション★ -->
+    <!-- 未来シミュレーション -->
     <div id="dash-simulation" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🔮 未来の残高シミュレーション</h3>
@@ -217,7 +217,6 @@
         <label>出金元口座</label><select id="ai-account"></select>
         <label>メモ</label><input type="text" id="ai-note">
         <input type="hidden" id="ai-receipt-url">
-
         <button class="btn-secondary" onclick="saveAiTransaction()">💾 確定して登録</button>
       </div>
     </div>
@@ -228,14 +227,12 @@
         <option value="支出">💸 支出 (マイナス)</option>
         <option value="収入">💰 収入 (プラス)</option>
       </select>
-
       <label>日付</label><input type="date" id="man-date">
       <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与">
       <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
       <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
       <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
       <label>メモ（任意）</label><input type="text" id="man-note">
-
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
@@ -245,7 +242,6 @@
       <label>振替先 (入金口座)</label><select id="trans-to-account"></select>
       <label>移動金額</label><input type="number" id="trans-amount" placeholder="例: 30000">
       <label>メモ（任意）</label><input type="text" id="trans-note" placeholder="例: チャージ、ATM引き出し">
-
       <button class="btn-warning" onclick="saveTransferTransaction()">🔄 口座間移動を実行</button>
     </div>
   </div>
@@ -254,6 +250,7 @@
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
 
+    <!-- カテゴリ管理 -->
     <div class="setting-section" style="border-top: none; margin-top: 0; padding-top: 0;">
       <h3>📁 カテゴリの管理</h3>
       <div id="manage-category-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
@@ -262,22 +259,24 @@
       <button class="btn-outline" style="border-color:#28a745; color:#28a745;" onclick="addNewCategory()">追加する</button>
     </div>
 
+    <!-- 口座管理 -->
     <div class="setting-section">
       <h3>🏦 口座情報の管理</h3>
       <div id="manage-account-list"></div>
-
       <h4>＋ 新しい口座の追加</h4>
       <input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)">
       <input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)">
       <button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
     </div>
 
+    <!-- カレンダー同期 -->
     <div class="setting-section">
       <h3>📅 Googleカレンダー同期</h3>
       <p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p>
       <button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
     </div>
 
+    <!-- モデル設定 -->
     <div class="setting-section">
       <h3>🤖 AIモデル設定</h3>
       <label>Gemini モデルバージョン</label>
@@ -288,6 +287,7 @@
 </div>
 
 <script>
+  // ★Vercelの中継APIアドレス★
   const GAS_URL = "/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -437,7 +437,7 @@
     }
   }
 
-  // ===== ★新規追加：シミュレーション機能ロジック★ =====
+  // ===== ★修正：シミュレーション機能の日付比較バグを修正★ =====
   function addSimEvent() {
     const date = document.getElementById('sim-date').value;
     const type = document.getElementById('sim-type').value;
@@ -449,7 +449,7 @@
 
     simEvents.push({
       id: 'sim_' + new Date().getTime(),
-      date: date.replace(/-/g, '/'),
+      date: date.replace(/\//g, '-'), // 形式を YYYY-MM-DD に統一
       type: type, title: title, amount: amount, account: account, source: 'simulation'
     });
     
@@ -464,37 +464,35 @@
   }
 
   function renderSimulation() {
-    // 1. 各口座の「現在残高」をベースにする
     const simAccounts = {};
     for (const [name, val] of Object.entries(appData.accounts)) {
       simAccounts[name] = val.current;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+    // 今日の日付をハイフン区切りで取得 (例: 2026-08-09)
+    const todayStr = new Date().toISOString().split('T')[0];
     let futureEvents = [];
 
-    // 2. すでに登録済みの未来の支払い (Transactions) を混ぜる
     appData.transactions.forEach(tx => {
-      if (tx.date > todayStr) futureEvents.push({ ...tx, source: 'transaction' });
+      const d = tx.date.replace(/\//g, '-');
+      if (d > todayStr) futureEvents.push({ ...tx, date: d, source: 'transaction' });
     });
 
-    // 3. カレンダーからの未来予定 (Forecasts) を混ぜる
-    const defaultAcc = Object.keys(appData.accounts)[0] || '現金'; // カレンダー予定はデフォルト口座から引く
+    const defaultAcc = Object.keys(appData.accounts)[0] || '現金'; 
     appData.forecasts.forEach(fc => {
-      if (fc.date > todayStr) {
-        futureEvents.push({ date: fc.date, type: '支出', title: fc.title, amount: fc.amount, account: defaultAcc, source: 'forecast' });
+      const d = fc.date.replace(/\//g, '-');
+      if (d > todayStr) {
+        futureEvents.push({ date: d, type: '支出', title: fc.title, amount: fc.amount, account: defaultAcc, source: 'forecast' });
       }
     });
 
-    // 4. 架空のシミュレーション予定を混ぜる
     simEvents.forEach(sim => {
-      if (sim.date >= todayStr) futureEvents.push(sim);
+      const d = sim.date.replace(/\//g, '-');
+      if (d >= todayStr) futureEvents.push({ ...sim, date: d });
     });
 
-    // 5. すべての未来予定を日付順にソートする
     futureEvents.sort((a, b) => a.date.localeCompare(b.date));
 
-    // 6. 日付順に残高を計算しながらリストを生成
     let historyHtml = '';
     futureEvents.forEach(ev => {
       if (ev.type === '支出') {
@@ -521,7 +519,7 @@
           <div class="history-main" style="width:100%;">
             <div class="history-store">${badge}${ev.title}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              <div class="history-sub">${ev.date} | ${ev.type} (${ev.account})<br><span style="color:#007bff; font-weight:bold; font-size:1.1em;">▶ ${ev.account}残高: ¥${simAccounts[ev.account].toLocaleString()}</span></div>
+              <div class="history-sub">${ev.date} | ${ev.type} (${ev.account})<br><span style="color:#007bff; font-weight:bold; font-size:1.1em;">▶ ${ev.account}残高: ¥${(simAccounts[ev.account] || 0).toLocaleString()}</span></div>
               <div style="display:flex; align-items:center;">
                 <div class="history-amount" style="color: ${amtColor}">${prefix}${Number(ev.amount).toLocaleString()}</div>
                 ${delBtn}
@@ -535,7 +533,6 @@
     if(!historyHtml) historyHtml = '<div style="padding: 15px; text-align: center; color: #888;">未来の予定はありません。</div>';
     document.getElementById('sim-history-container').innerHTML = historyHtml;
 
-    // 7. シミュレーション後の最終残高カードを生成
     let accHtml = '';
     for (const [name, bal] of Object.entries(simAccounts)) {
       accHtml += `<div class="account-card" style="background:#fff3cd; border-color:#ffeeba;">${name}<span style="color:#856404;">¥${bal.toLocaleString()}</span></div>`;
