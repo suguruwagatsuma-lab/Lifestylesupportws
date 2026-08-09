@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>wagatsuma’s家計簿</title>
-  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -56,8 +55,8 @@
 
     .category-badge { background: #e9ecef; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; display: inline-block; color: #333; font-weight: bold; }
 
-    .history-list { margin-top: 15px; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
-    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .history-list { margin-top: 15px; max-height: 450px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
+    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; background: #fff; }
     .history-item:hover { background: #f8f9fa; }
     .history-item:last-child { border-bottom: none; }
     .history-store { font-weight: bold; font-size: 0.95em; }
@@ -107,7 +106,7 @@
   <div id="dashboard-tab" class="tab-content active">
     <div id="dash-main">
       <h3>💰 現在の口座残高</h3>
-      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示されます。</p>
+      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の確定分は下の「見込」として表示</p>
       <div class="account-grid" id="account-container"></div>
       
       <h3>🔍 メニュー</h3>
@@ -116,20 +115,26 @@
         <div class="menu-btn" onclick="openDashView('charts')"><span class="menu-icon">📈</span>推移グラフ</div>
         <div class="menu-btn" onclick="openDashView('history-account')"><span class="menu-icon">🏦</span>口座別 履歴</div>
         <div class="menu-btn" onclick="openDashView('history-category')"><span class="menu-icon">🏢</span>店舗・項目別</div>
+        <div class="menu-btn" style="border-color:#fd7e14; color:#fd7e14;" onclick="openDashView('simulation')"><span class="menu-icon">🔮</span>未来シミュレート</div>
         <div class="menu-btn" onclick="openDashView('history-all')"><span class="menu-icon">📋</span>すべての履歴</div>
       </div>
     </div>
 
+    <!-- カレンダー -->
     <div id="dash-calendar" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📅 支出カレンダー (タップで修正/削除)</h3>
       <div id="calendar"></div>
     </div>
+
+    <!-- グラフ -->
     <div id="dash-charts" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📈 月別・口座別の支出推移</h3>
       <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
     </div>
+
+    <!-- 口座別履歴 -->
     <div id="dash-history-account" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🏦 口座別の利用履歴</h3>
@@ -137,25 +142,55 @@
       <div class="history-list" id="history-container-account"></div>
     </div>
 
+    <!-- 店舗・カテゴリ別履歴 -->
     <div id="dash-history-category" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🏢 店舗・項目別の履歴</h3>
-      
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
         <label style="margin-top: 0;">🔍 履歴を絞り込む</label>
         <select id="filter-category" onchange="renderCategoryHistory()">
           <option value="">カテゴリ・店舗を選択してください</option>
         </select>
       </div>
-
       <div id="summary-category" class="summary-box"></div>
       <div class="history-list" id="history-container-category"></div>
     </div>
 
+    <!-- すべての履歴 -->
     <div id="dash-history-all" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📋 すべての利用履歴</h3>
       <div class="history-list" id="history-container-all"></div>
+    </div>
+
+    <!-- ★新規: 未来シミュレーション★ -->
+    <div id="dash-simulation" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>🔮 未来の残高シミュレーション</h3>
+      <p style="font-size:0.85em; color:#666; margin-top:-5px;">未来の確定予定と架空の予定を組み合わせて、口座残高の推移を計算します。</p>
+
+      <div style="background: #e9f5ff; padding: 15px; border-radius: 8px; border: 1px solid #b8daff; margin-bottom: 15px;">
+        <label style="margin-top: 0; color:#0056b3;">➕ 架空の予定を追加</label>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <input type="date" id="sim-date" style="flex:1.5;">
+          <select id="sim-type" style="flex:1;">
+            <option value="支出">💸 支出</option>
+            <option value="収入">💰 収入</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="text" id="sim-title" placeholder="内容 (例: ボーナス、旅行)" style="flex:2;">
+          <input type="number" id="sim-amount" placeholder="金額" style="flex:1;">
+        </div>
+        <select id="sim-account" style="margin-top: 8px;"></select>
+        <button class="btn-secondary" style="padding: 10px; margin-top: 15px;" onclick="addSimEvent()">リストに追加して計算</button>
+      </div>
+
+      <h4>🏦 シミュレーション後の最終残高</h4>
+      <div class="account-grid" id="sim-account-container"></div>
+
+      <h4>📅 未来の資金推移カレンダー</h4>
+      <div class="history-list" id="sim-history-container"></div>
     </div>
   </div>
 
@@ -253,7 +288,6 @@
 </div>
 
 <script>
-  // ★Vercelの中継APIアドレス★
   const GAS_URL = "/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
@@ -261,6 +295,9 @@
   let calendarInstance = null;
   let chartInstance = null;
   let appData = null;
+  
+  // シミュレーション用の架空データ配列
+  let simEvents = [];
 
   window.onload = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -339,14 +376,14 @@
     const transTo = document.getElementById('trans-to-account');
     const manageAccList = document.getElementById('manage-account-list');
     
-    accContainer.innerHTML = ''; aiAcc.innerHTML = ''; manAcc.innerHTML = '';
-    transFrom.innerHTML = ''; transTo.innerHTML = ''; manageAccList.innerHTML = '';
+    accContainer.innerHTML = ''; aiAcc.innerHTML = '<option value="">口座を選択</option>'; manAcc.innerHTML = '<option value="">口座を選択</option>';
+    transFrom.innerHTML = '<option value="">出金元を選択</option>'; transTo.innerHTML = '<option value="">入金先を選択</option>'; manageAccList.innerHTML = '';
     filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
 
     for (const [name, val] of Object.entries(appData.accounts)) {
       let futureHtml = '';
       if (val.current !== val.future) {
-        futureHtml = `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(未来の見込: ¥${val.future.toLocaleString()})</span>`;
+        futureHtml = `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(見込: ¥${val.future.toLocaleString()})</span>`;
       }
       accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span>${futureHtml}</div>`;
       
@@ -370,7 +407,6 @@
     const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.title && t.title !== '取引').map(t => t.title))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
-    
     document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
 
     document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
@@ -383,6 +419,7 @@
     document.getElementById('dash-history-account').style.display = 'none';
     document.getElementById('dash-history-category').style.display = 'none';
     document.getElementById('dash-history-all').style.display = 'none';
+    document.getElementById('dash-simulation').style.display = 'none';
   }
 
   function openDashView(view) {
@@ -391,7 +428,121 @@
     if (view === 'calendar') renderCalendar(appData.transactions, appData.forecasts);
     if (view === 'charts') renderChart(appData.monthlyStats);
     if (view === 'history-all') renderHistoryList(appData.transactions, 'history-container-all');
+    if (view === 'simulation') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('sim-date').value = tomorrow.toISOString().split('T')[0];
+      document.getElementById('sim-account').innerHTML = Object.keys(appData.accounts).map(a => `<option value="${a}">${a}</option>`).join('');
+      renderSimulation();
+    }
   }
+
+  // ===== ★新規追加：シミュレーション機能ロジック★ =====
+  function addSimEvent() {
+    const date = document.getElementById('sim-date').value;
+    const type = document.getElementById('sim-type').value;
+    const title = document.getElementById('sim-title').value;
+    const amount = Number(document.getElementById('sim-amount').value);
+    const account = document.getElementById('sim-account').value;
+
+    if (!date || !title || !amount) { alert("日付、内容、金額を正しく入力してください"); return; }
+
+    simEvents.push({
+      id: 'sim_' + new Date().getTime(),
+      date: date.replace(/-/g, '/'),
+      type: type, title: title, amount: amount, account: account, source: 'simulation'
+    });
+    
+    document.getElementById('sim-title').value = '';
+    document.getElementById('sim-amount').value = '';
+    renderSimulation();
+  }
+
+  function removeSimEvent(id) {
+    simEvents = simEvents.filter(e => e.id !== id);
+    renderSimulation();
+  }
+
+  function renderSimulation() {
+    // 1. 各口座の「現在残高」をベースにする
+    const simAccounts = {};
+    for (const [name, val] of Object.entries(appData.accounts)) {
+      simAccounts[name] = val.current;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+    let futureEvents = [];
+
+    // 2. すでに登録済みの未来の支払い (Transactions) を混ぜる
+    appData.transactions.forEach(tx => {
+      if (tx.date > todayStr) futureEvents.push({ ...tx, source: 'transaction' });
+    });
+
+    // 3. カレンダーからの未来予定 (Forecasts) を混ぜる
+    const defaultAcc = Object.keys(appData.accounts)[0] || '現金'; // カレンダー予定はデフォルト口座から引く
+    appData.forecasts.forEach(fc => {
+      if (fc.date > todayStr) {
+        futureEvents.push({ date: fc.date, type: '支出', title: fc.title, amount: fc.amount, account: defaultAcc, source: 'forecast' });
+      }
+    });
+
+    // 4. 架空のシミュレーション予定を混ぜる
+    simEvents.forEach(sim => {
+      if (sim.date >= todayStr) futureEvents.push(sim);
+    });
+
+    // 5. すべての未来予定を日付順にソートする
+    futureEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 6. 日付順に残高を計算しながらリストを生成
+    let historyHtml = '';
+    futureEvents.forEach(ev => {
+      if (ev.type === '支出') {
+        if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount;
+      } else if (ev.type === '収入') {
+        if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] += ev.amount;
+      } else if (ev.type === '振替') {
+        if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount;
+        if (simAccounts[ev.toAccount] !== undefined) simAccounts[ev.toAccount] += ev.amount;
+      }
+
+      let badge = '', amtColor = '#d9534f', prefix = '-¥';
+      if (ev.source === 'simulation') badge = '<span style="background:#fd7e14; color:#fff; font-size:0.75em; padding:2px 6px; border-radius:4px; margin-right:6px;">架空</span>';
+      else if (ev.source === 'forecast') badge = '<span style="background:#17a2b8; color:#fff; font-size:0.75em; padding:2px 6px; border-radius:4px; margin-right:6px;">カレンダー</span>';
+      else badge = '<span style="background:#6c757d; color:#fff; font-size:0.75em; padding:2px 6px; border-radius:4px; margin-right:6px;">確定済</span>';
+
+      if (ev.type === '収入') { amtColor = '#28a745'; prefix = '+¥'; }
+      else if (ev.type === '振替') { amtColor = '#6c757d'; prefix = '¥'; }
+
+      let delBtn = ev.source === 'simulation' ? `<button onclick="removeSimEvent('${ev.id}')" style="background:none; border:none; color:#dc3545; font-size:1.5em; cursor:pointer; padding:0; margin-left:10px;">×</button>` : '';
+
+      historyHtml += `
+        <div class="history-item" style="${ev.source==='simulation' ? 'background:#fffaf0;' : 'background:#fff;'} border-bottom: 1px solid #eee;">
+          <div class="history-main" style="width:100%;">
+            <div class="history-store">${badge}${ev.title}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <div class="history-sub">${ev.date} | ${ev.type} (${ev.account})<br><span style="color:#007bff; font-weight:bold; font-size:1.1em;">▶ ${ev.account}残高: ¥${simAccounts[ev.account].toLocaleString()}</span></div>
+              <div style="display:flex; align-items:center;">
+                <div class="history-amount" style="color: ${amtColor}">${prefix}${Number(ev.amount).toLocaleString()}</div>
+                ${delBtn}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    if(!historyHtml) historyHtml = '<div style="padding: 15px; text-align: center; color: #888;">未来の予定はありません。</div>';
+    document.getElementById('sim-history-container').innerHTML = historyHtml;
+
+    // 7. シミュレーション後の最終残高カードを生成
+    let accHtml = '';
+    for (const [name, bal] of Object.entries(simAccounts)) {
+      accHtml += `<div class="account-card" style="background:#fff3cd; border-color:#ffeeba;">${name}<span style="color:#856404;">¥${bal.toLocaleString()}</span></div>`;
+    }
+    document.getElementById('sim-account-container').innerHTML = accHtml;
+  }
+  // ===========================================
 
   function createHistoryHtml(tx) {
     let amtColor = '#d9534f'; let prefix = '-¥';
@@ -417,13 +568,10 @@
     container.innerHTML = sortedTxs.map(tx => createHistoryHtml(tx)).join('');
   }
 
-  // ★修正箇所：口座別履歴で、シートの過去データ(H列)の汚れを無視する防弾設計★
   function renderAccountHistory() {
     const acc = document.getElementById('filter-account').value;
     if (!acc) { document.getElementById('history-container-account').innerHTML = ''; return; }
-    
     const filtered = appData.transactions.filter(t => t.account === acc || (t.type === '振替' && t.toAccount === acc));
-    
     renderHistoryList(filtered, 'history-container-account');
   }
 
@@ -468,11 +616,11 @@
     const calendarEl = document.getElementById('calendar');
     const events = [];
     txs.forEach(tx => {
-      if (tx.type === '支出') events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date, color: '#007bff', extendedProps: { rawData: tx, isFc: false } });
-      else if (tx.type === '収入') events.push({ title: `➕ ${tx.title} +¥${tx.amount}`, start: tx.date, color: '#28a745', extendedProps: { rawData: tx, isFc: false } });
-      else if (tx.type === '振替') events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date, color: '#6c757d', extendedProps: { rawData: tx, isFc: false } });
+      if (tx.type === '支出') events.push({ title: `${tx.title} -¥${tx.amount}`, start: tx.date.replace(/\//g, '-'), color: '#007bff', extendedProps: { rawData: tx, isFc: false } });
+      else if (tx.type === '収入') events.push({ title: `➕ ${tx.title} +¥${tx.amount}`, start: tx.date.replace(/\//g, '-'), color: '#28a745', extendedProps: { rawData: tx, isFc: false } });
+      else if (tx.type === '振替') events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date.replace(/\//g, '-'), color: '#6c757d', extendedProps: { rawData: tx, isFc: false } });
     });
-    fcs.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date, color: '#fd7e14', extendedProps: { rawData: fc, isFc: true } }); });
+    fcs.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date.replace(/\//g, '-'), color: '#fd7e14', extendedProps: { rawData: fc, isFc: true } }); });
 
     if (calendarInstance) calendarInstance.destroy();
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
@@ -529,7 +677,6 @@
 
   async function updateTransactionSubmit() {
     if (!document.getElementById('edit-account').value) { alert("対象口座を選択してください"); return; }
-    
     const payload = {
       id: document.getElementById('edit-id').value, type: document.getElementById('edit-type').value,
       date: document.getElementById('edit-date').value.replace(/-/g, '/'), store: document.getElementById('edit-store').value,
