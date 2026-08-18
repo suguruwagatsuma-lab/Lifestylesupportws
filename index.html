@@ -25,8 +25,12 @@
     .sub-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: bold; color: #666; }
     .sub-tab.active { background: #fff; color: #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 20px; }
-    .menu-btn { background: #fff; border: 2px solid #007bff; color: #007bff; padding: 15px 10px; border-radius: 8px; font-size: 0.95em; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    /* ★新規：総資産パネル★ */
+    .total-balance { background: #e9f5ff; border: 2px solid #b8daff; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,123,255,0.1); }
+    .total-balance span { font-size: 2.2em; font-weight: bold; color: #007bff; display: block; margin-top: 5px;}
+
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 20px; }
+    .menu-btn { background: #fff; border: 2px solid #007bff; color: #007bff; padding: 15px 10px; border-radius: 8px; font-size: 0.9em; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .menu-btn:hover { background: #e9f5ff; }
     .menu-icon { font-size: 1.8em; margin-bottom: 5px; }
 
@@ -55,7 +59,7 @@
 
     .category-badge { background: #e9ecef; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; display: inline-block; color: #333; font-weight: bold; }
 
-    .history-list { margin-top: 15px; max-height: 450px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
+    .history-list { margin-top: 15px; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
     .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; background: #fff; }
     .history-item:hover { background: #f8f9fa; }
     .history-item:last-child { border-bottom: none; }
@@ -105,36 +109,73 @@
   <!-- 1. ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <div id="dash-main">
-      <h3>💰 現在の口座残高</h3>
-      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示されます。</p>
+      
+      <!-- ★新規：総資産表示★ -->
+      <div class="total-balance">
+        <div style="font-size: 0.85em; color: #666; font-weight: normal;">💰 現在の総資産</div>
+        <span id="total-balance-amount">¥0</span>
+      </div>
+
+      <h3>🏦 現在の口座残高</h3>
+      <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示</p>
       <div class="account-grid" id="account-container"></div>
       
       <h3>🔍 メニュー</h3>
       <div class="menu-grid">
+        <div class="menu-btn" style="border-color:#28a745; color:#28a745;" onclick="openDashView('report')"><span class="menu-icon">📊</span>分析・レポート</div>
         <div class="menu-btn" onclick="openDashView('calendar')"><span class="menu-icon">📅</span>カレンダー</div>
-        <div class="menu-btn" onclick="openDashView('charts')"><span class="menu-icon">📈</span>推移グラフ</div>
-        <div class="menu-btn" onclick="openDashView('history-account')"><span class="menu-icon">🏦</span>口座別 履歴</div>
         <div class="menu-btn" onclick="openDashView('history-category')"><span class="menu-icon">🏢</span>店舗・項目別</div>
+        <div class="menu-btn" onclick="openDashView('history-account')"><span class="menu-icon">🏦</span>口座別 履歴</div>
+        <div class="menu-btn" onclick="openDashView('charts')"><span class="menu-icon">📈</span>口座残高推移</div>
         <div class="menu-btn" style="border-color:#fd7e14; color:#fd7e14;" onclick="openDashView('simulation')"><span class="menu-icon">🔮</span>未来シミュレート</div>
         <div class="menu-btn" onclick="openDashView('history-all')"><span class="menu-icon">📋</span>すべての履歴</div>
       </div>
     </div>
 
-    <!-- カレンダー -->
+    <!-- ★新規：分析・レポートビュー★ -->
+    <div id="dash-report" style="display:none;">
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
+      <h3>📊 分析・レポート</h3>
+      
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
+        <label style="margin-top: 0;">📅 対象の「月」または「年」を選ぶ</label>
+        <select id="report-period" onchange="renderAllReports()">
+          <!-- JSで動的生成 -->
+        </select>
+      </div>
+
+      <h4>🕸 カテゴリバランス (六角形グラフ)</h4>
+      <p style="font-size:0.8em; color:#666; margin-top:-5px;">※選択期間のカテゴリ別支出割合</p>
+      <div class="chart-container" style="height: 300px;">
+        <canvas id="radarChart"></canvas>
+      </div>
+
+      <h4 style="margin-top:40px;">📈 項目別の支出推移 (折れ線グラフ)</h4>
+      <p style="font-size:0.8em; color:#666; margin-top:-5px;">※月選択時は「日別」、年選択時は「月別」の推移</p>
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
+        <label style="margin-top: 0;">🔍 項目を選ぶ</label>
+        <select id="report-target" onchange="renderTrendChart()">
+          <!-- JSで動的生成 -->
+        </select>
+      </div>
+      
+      <div id="report-trend-summary" class="summary-box" style="display: block; margin-bottom:10px;"></div>
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+    <!-- /分析・レポートここまで -->
+
     <div id="dash-calendar" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📅 支出カレンダー (タップで修正/削除)</h3>
       <div id="calendar"></div>
     </div>
-
-    <!-- グラフ -->
     <div id="dash-charts" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📈 月別・口座別の支出推移</h3>
       <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
     </div>
-
-    <!-- 口座別履歴 -->
     <div id="dash-history-account" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🏦 口座別の利用履歴</h3>
@@ -142,7 +183,6 @@
       <div class="history-list" id="history-container-account"></div>
     </div>
 
-    <!-- 店舗・カテゴリ別履歴 -->
     <div id="dash-history-category" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🏢 店舗・項目別の履歴</h3>
@@ -156,14 +196,12 @@
       <div class="history-list" id="history-container-category"></div>
     </div>
 
-    <!-- すべての履歴 -->
     <div id="dash-history-all" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📋 すべての利用履歴</h3>
       <div class="history-list" id="history-container-all"></div>
     </div>
 
-    <!-- 未来シミュレーション -->
     <div id="dash-simulation" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>🔮 未来の残高シミュレーション</h3>
@@ -188,7 +226,6 @@
 
       <h4>🏦 シミュレーション後の最終残高</h4>
       <div class="account-grid" id="sim-account-container"></div>
-
       <h4>📅 未来の資金推移カレンダー</h4>
       <div class="history-list" id="sim-history-container"></div>
     </div>
@@ -227,12 +264,14 @@
         <option value="支出">💸 支出 (マイナス)</option>
         <option value="収入">💰 収入 (プラス)</option>
       </select>
+
       <label>日付</label><input type="date" id="man-date">
       <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与">
       <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
       <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
       <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
       <label>メモ（任意）</label><input type="text" id="man-note">
+
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
 
@@ -250,7 +289,6 @@
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
 
-    <!-- カテゴリ管理 -->
     <div class="setting-section" style="border-top: none; margin-top: 0; padding-top: 0;">
       <h3>📁 カテゴリの管理</h3>
       <div id="manage-category-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
@@ -259,7 +297,6 @@
       <button class="btn-outline" style="border-color:#28a745; color:#28a745;" onclick="addNewCategory()">追加する</button>
     </div>
 
-    <!-- 口座管理 -->
     <div class="setting-section">
       <h3>🏦 口座情報の管理</h3>
       <div id="manage-account-list"></div>
@@ -269,14 +306,12 @@
       <button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
     </div>
 
-    <!-- カレンダー同期 -->
     <div class="setting-section">
       <h3>📅 Googleカレンダー同期</h3>
       <p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p>
       <button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
     </div>
 
-    <!-- モデル設定 -->
     <div class="setting-section">
       <h3>🤖 AIモデル設定</h3>
       <label>Gemini モデルバージョン</label>
@@ -294,9 +329,10 @@
   let currentFile = null;
   let calendarInstance = null;
   let chartInstance = null;
+  let radarChartInstance = null; // ★新規追加：レーダーチャート用
+  let trendChartInstance = null; // ★新規追加：推移折れ線用
   let appData = null;
   
-  // シミュレーション用の架空データ配列
   let simEvents = [];
 
   window.onload = () => {
@@ -309,7 +345,6 @@
   function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    
     if(tabId === 'dashboard') {
       document.querySelectorAll('.tab')[0].classList.add('active');
       document.getElementById('dashboard-tab').classList.add('active');
@@ -368,6 +403,9 @@
     const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡");
     appData = res.data;
 
+    // ★総資産の計算と表示★
+    let totalCurrent = 0;
+
     const accContainer = document.getElementById('account-container');
     const filterAcc = document.getElementById('filter-account');
     const aiAcc = document.getElementById('ai-account');
@@ -381,6 +419,8 @@
     filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
 
     for (const [name, val] of Object.entries(appData.accounts)) {
+      totalCurrent += val.current; // 総資産を加算
+
       let futureHtml = '';
       if (val.current !== val.future) {
         futureHtml = `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(見込: ¥${val.future.toLocaleString()})</span>`;
@@ -398,16 +438,34 @@
         </div>`;
     }
 
+    // 総資産を反映
+    document.getElementById('total-balance-amount').innerText = `¥${totalCurrent.toLocaleString()}`;
+
     const catOpts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
     document.getElementById('ai-category').innerHTML = catOpts;
     document.getElementById('man-category').innerHTML = catOpts;
-
     document.getElementById('manage-category-list').innerHTML = appData.categories.map(c => `<div class="category-badge">${c}</div>`).join('');
 
     const uniqueStores = [...new Set(appData.transactions.filter(t => t.type === '支出' && t.title && t.title !== '取引').map(t => t.title))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗: ${s}</option>`).join('');
+    
+    // 各プルダウンに反映
     document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
+    document.getElementById('report-target').innerHTML = filterCatOpts + filterStoreOpts;
+
+    // ★レポート用の期間（月・年）を抽出してプルダウンにセット★
+    const periods = new Set();
+    appData.transactions.forEach(tx => {
+      if(tx.date) {
+        const y = tx.date.substring(0, 4); // YYYY
+        const m = tx.date.substring(0, 7); // YYYY-MM
+        periods.add(y + "年");
+        periods.add(m);
+      }
+    });
+    const sortedPeriods = [...periods].sort().reverse(); // 新しい順
+    document.getElementById('report-period').innerHTML = `<option value="all">全期間</option>` + sortedPeriods.map(p => `<option value="${p}">${p}</option>`).join('');
 
     document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
   }
@@ -420,14 +478,22 @@
     document.getElementById('dash-history-category').style.display = 'none';
     document.getElementById('dash-history-all').style.display = 'none';
     document.getElementById('dash-simulation').style.display = 'none';
+    document.getElementById('dash-report').style.display = 'none'; // ★追加
   }
 
   function openDashView(view) {
     document.getElementById('dash-main').style.display = 'none';
     document.getElementById(`dash-${view}`).style.display = 'block';
+    
     if (view === 'calendar') renderCalendar(appData.transactions, appData.forecasts);
     if (view === 'charts') renderChart(appData.monthlyStats);
     if (view === 'history-all') renderHistoryList(appData.transactions, 'history-container-all');
+    
+    // ★レポート画面を開いた時の処理★
+    if (view === 'report') {
+      renderAllReports();
+    }
+
     if (view === 'simulation') {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -437,7 +503,169 @@
     }
   }
 
-  // ===== ★修正：シミュレーション機能の日付比較バグを修正★ =====
+  // ==========================================
+  // ★新機能：分析・レポート (レーダー ＆ 折れ線推移)
+  // ==========================================
+  function renderAllReports() {
+    renderRadarChart();
+    renderTrendChart();
+  }
+
+  // 1. 六角形（レーダー）チャート：カテゴリバランス
+  function renderRadarChart() {
+    const period = document.getElementById('report-period').value;
+    let txs = appData.transactions.filter(t => t.type === '支出');
+    
+    // 期間の絞り込み
+    if (period !== 'all') {
+      if (period.includes('年')) {
+        const year = period.replace('年', '');
+        txs = txs.filter(t => t.date.startsWith(year));
+      } else {
+        txs = txs.filter(t => t.date.startsWith(period)); // YYYY-MM
+      }
+    }
+
+    // カテゴリごとの合計を計算
+    const categoryTotals = {};
+    appData.categories.forEach(c => categoryTotals[c] = 0);
+    txs.forEach(t => {
+      if (categoryTotals[t.category] !== undefined) categoryTotals[t.category] += Number(t.amount);
+    });
+
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    if (radarChartInstance) radarChartInstance.destroy();
+    
+    radarChartInstance = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '支出額',
+          data: data,
+          backgroundColor: 'rgba(0, 123, 255, 0.2)',
+          borderColor: 'rgba(0, 123, 255, 1)',
+          pointBackgroundColor: 'rgba(0, 123, 255, 1)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { r: { ticks: { display: false }, beginAtZero: true } }
+      }
+    });
+  }
+
+  // 2. 項目別・期間ごとの推移（折れ線グラフ）
+  function renderTrendChart() {
+    const period = document.getElementById('report-period').value;
+    const target = document.getElementById('report-target').value;
+    
+    if (!target) {
+      document.getElementById('report-trend-summary').style.display = 'none';
+      if (trendChartInstance) trendChartInstance.destroy();
+      return;
+    }
+
+    let txs = appData.transactions.filter(t => t.type === '支出');
+    let titleStr = '';
+
+    // 対象項目の絞り込み
+    if (target.startsWith('cat_')) {
+      const cat = target.replace('cat_', '');
+      txs = txs.filter(t => t.category === cat);
+      titleStr = `カテゴリ「${cat}」`;
+    } else if (target.startsWith('store_')) {
+      const store = target.replace('store_', '');
+      txs = txs.filter(t => t.title === store);
+      titleStr = `店舗「${store}」`;
+    }
+
+    let labels = [];
+    let dataMap = {};
+
+    // 期間ごとの横軸の生成とデータ集計
+    if (period === 'all') {
+      txs.forEach(t => {
+        const m = t.date.substring(0, 7);
+        dataMap[m] = (dataMap[m] || 0) + Number(t.amount);
+      });
+      labels = Object.keys(dataMap).sort();
+      titleStr += ' の全期間推移';
+    } else if (period.includes('年')) {
+      const year = period.replace('年', '');
+      txs = txs.filter(t => t.date.startsWith(year));
+      // 1月〜12月をゼロ埋めして用意
+      for(let i=1; i<=12; i++) {
+        const m = `${year}-${String(i).padStart(2, '0')}`;
+        dataMap[m] = 0;
+      }
+      txs.forEach(t => {
+        const m = t.date.substring(0, 7);
+        if(dataMap[m] !== undefined) dataMap[m] += Number(t.amount);
+      });
+      labels = Object.keys(dataMap).sort();
+      titleStr += ` の${year}年推移`;
+    } else {
+      // 指定した月の場合は、1日〜末日を用意
+      txs = txs.filter(t => t.date.startsWith(period));
+      const [y, m] = period.split('-');
+      const lastDay = new Date(y, m, 0).getDate();
+      for(let i=1; i<=lastDay; i++) {
+        const d = `${period}-${String(i).padStart(2, '0')}`;
+        dataMap[d] = 0;
+      }
+      txs.forEach(t => {
+        if(dataMap[t.date] !== undefined) dataMap[t.date] += Number(t.amount);
+      });
+      labels = Object.keys(dataMap).sort();
+      titleStr += ` の${period}推移`;
+    }
+
+    const dataArr = labels.map(l => dataMap[l]);
+    const totalAmount = dataArr.reduce((sum, v) => sum + v, 0);
+    
+    const summaryBox = document.getElementById('report-trend-summary');
+    summaryBox.style.display = 'block';
+    summaryBox.innerHTML = `${titleStr} 合計:<br><span style="font-size:1.3em; color:#d9534f;">¥${totalAmount.toLocaleString()}</span>`;
+
+    // グラフ下のラベルを見やすくする
+    const displayLabels = labels.map(l => {
+      if (period.includes('年') || period === 'all') return Number(l.substring(5, 7)) + '月';
+      return Number(l.substring(8, 10)) + '日';
+    });
+
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    if (trendChartInstance) trendChartInstance.destroy();
+    trendChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: displayLabels,
+        datasets: [{
+          label: '支出額',
+          data: dataArr,
+          borderColor: '#d9534f',
+          backgroundColor: 'rgba(217, 83, 79, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3 // 波のように丸みをつける
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  // ===========================================
+  // シミュレーション機能ロジック
+  // ===========================================
   function addSimEvent() {
     const date = document.getElementById('sim-date').value;
     const type = document.getElementById('sim-type').value;
@@ -469,7 +697,6 @@
       simAccounts[name] = val.current;
     }
 
-    // 今日の日付をハイフン区切りで取得 (例: 2026-08-09)
     const todayStr = new Date().toISOString().split('T')[0];
     let futureEvents = [];
 
@@ -594,6 +821,7 @@
     renderHistoryList(filtered, 'history-container-category');
   }
 
+  // （旧）口座残高推移グラフ
   function renderChart(monthlyStats) {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const months = Object.keys(monthlyStats).sort();
