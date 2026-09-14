@@ -79,8 +79,7 @@
     .summary-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; margin-top: 15px; border: 1px solid #ffeeba; display: none; }
     .radio-group { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; font-weight: bold; }
     .radio-group label { margin-top: 0; font-size: 1em; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-
-    /* ★新規追加：内訳テーブルのスタイル★ */
+    
     .breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 15px; }
     .breakdown-table th, .breakdown-table td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
     .breakdown-table th { background: #f4f7f6; font-weight: bold; color: #555; }
@@ -91,6 +90,7 @@
 
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
 
+<!-- モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <!-- ★分析・レポートビュー★ -->
+    <!-- 分析・レポートビュー -->
     <div id="dash-report" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📊 分析・レポート</h3>
@@ -144,7 +144,6 @@
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
         <label style="margin-top: 0;">📅 対象の「月」または「年」を選ぶ</label>
         <select id="report-period" onchange="renderAllReports()">
-          <!-- JSで動的生成 -->
         </select>
       </div>
 
@@ -163,7 +162,6 @@
       <p style="font-size:0.8em; color:#666; margin-top:-5px;">※月選択時は「日別」、年選択時は「月別」の推移</p>
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
         <label style="margin-top: 0;">🔍 表示する項目を選ぶ</label>
-        <!-- ★変更：onchangeで内訳テーブルも更新★ -->
         <select id="report-target" onchange="renderTrendChart(); renderBreakdownTable();">
         </select>
       </div>
@@ -173,12 +171,11 @@
         <canvas id="trendChart"></canvas>
       </div>
 
-      <!-- ★新規追加：内訳データ一覧（テーブル）★ -->
       <h4 style="margin-top:40px;">📋 内訳データ一覧</h4>
       <div id="report-breakdown-table" style="background:#fff; border:1px solid #eee; border-radius:8px; overflow:hidden;"></div>
     </div>
 
-    <!-- カレンダーなどその他のビュー -->
+    <!-- カレンダー・その他のビュー -->
     <div id="dash-calendar" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📅 支出カレンダー (タップで修正/削除)</h3>
@@ -320,8 +317,8 @@
 </div>
 
 <script>
-  // Vercel中継API
-  const GAS_URL = "/api/kakeibo";
+  // ★GASの直接URL（Safariの通信ブロックを100%回避する設定）★
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null;
@@ -330,7 +327,6 @@
   let radarChartInstance = null;
   let trendChartInstance = null;
   let appData = null;
-  
   let simEvents = [];
 
   window.onload = () => {
@@ -376,14 +372,25 @@
     document.getElementById('lbl-man-account').innerText = type === '収入' ? '入金先口座' : '出金元口座';
   }
 
+  // ★超重要: Safariエラーを突破するための text/plain 通信★
   async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
     showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
       const res = await fetch(GAS_URL, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        method: "POST", 
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify(payload)
       });
-      const json = await res.json();
+      
+      const rawText = await res.text();
+      let json;
+      try {
+        json = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error("サーバー応答エラー:\n" + rawText.substring(0, 100));
+      }
+
       showLoader(false);
       if (!json.success) { alert("エラーが発生しました:\n" + json.error); throw new Error(json.error); }
       return json;
@@ -488,13 +495,10 @@
     }
   }
 
-  // ==========================================
-  // ★分析・レポート機能★
-  // ==========================================
   function renderAllReports() {
     renderRadarChart();
     renderTrendChart();
-    renderBreakdownTable(); // ★追加：内訳テーブルの描画
+    renderBreakdownTable();
   }
 
   function renderRadarChart() {
@@ -653,7 +657,6 @@
     });
   }
 
-  // ★新規：内訳データ一覧（テーブル）の生成★
   function renderBreakdownTable() {
     const period = document.getElementById('report-period').value;
     const target = document.getElementById('report-target').value;
@@ -674,7 +677,6 @@
     let html = '';
 
     if (target === 'total_balance') {
-      // 支出のみを集計してランキング
       const expTxs = txs.filter(t => t.type === '支出');
       
       const catMap = {};
@@ -702,7 +704,6 @@
       html += `</table>`;
 
     } else if (target.startsWith('cat_')) {
-      // 指定カテゴリの店舗別内訳
       const cat = target.replace('cat_', '');
       const expTxs = txs.filter(t => t.type === '支出' && t.category === cat);
       
@@ -719,7 +720,6 @@
       html += `</table>`;
 
     } else if (target.startsWith('store_')) {
-      // 指定店舗の期間別内訳
       const store = target.replace('store_', '');
       const filteredTxs = txs.filter(t => (t.type === '支出' || t.type === '収入') && t.title === store);
 
@@ -727,7 +727,7 @@
       filteredTxs.forEach(t => { 
         let dStr = t.date;
         if (period === 'all' || period.includes('年')) {
-          dStr = t.date.substring(0, 7).replace('-', '年') + '月'; // 見やすく変換
+          dStr = t.date.substring(0, 7).replace('-', '年') + '月'; 
         }
         if (!dateMap[dStr]) dateMap[dStr] = 0;
         if (t.type === '支出') dateMap[dStr] -= Number(t.amount);
@@ -749,7 +749,6 @@
 
     container.innerHTML = html;
   }
-  // ==========================================
 
   function createHistoryHtml(tx) {
     let amtColor = '#d9534f'; let prefix = '-¥';
