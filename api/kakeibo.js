@@ -1,8 +1,6 @@
-// ★Vercelのタイムアウトを60秒に延長し、Safariの通信ブロックを回避する最強設定★
-export const maxDuration = 60; 
+export const maxDuration = 60; // タイムアウトを60秒に延長して画像解析の途切れを防ぐ
 
 export default async function handler(req, res) {
-  // CORSヘッダー設定（ブラウザの通信規制を解除）
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -11,21 +9,31 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GASのデプロイURL
+  // ★GASのWebアプリURL（新しいデプロイをしてURLが変わったらここを書き換えてください）
   const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
 
   try {
     const bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     
-    // Vercelサーバーが代わりにGASへ通信（Googleの警告ブロックを100%回避）
     const gasResponse = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 
+        'Content-Type': 'text/plain',
+        'User-Agent': 'Vercel-Proxy'
+      },
       body: bodyData,
       redirect: 'follow'
     });
 
     const responseText = await gasResponse.text();
+
+    // 【最強の防御】Googleログイン画面（HTML）を突き返されたら、専用エラーを返す
+    if (responseText.includes("<!DOCTYPE html>") && responseText.includes("ppConfig")) {
+      return res.status(403).json({
+        success: false,
+        error: "【権限エラー】GASがGoogleログインを要求してブロックしています。GAS側のデプロイ設定で「アクセスできるユーザー」を必ず『全員』にして、新バージョンとしてデプロイし直してください。"
+      });
+    }
 
     try {
       const data = JSON.parse(responseText);
@@ -34,7 +42,7 @@ export default async function handler(req, res) {
       console.error("JSON Parse Error:", responseText);
       return res.status(500).json({ 
         success: false, 
-        error: "GASからの応答が不正です: " + responseText.substring(0, 100) 
+        error: "GASからの応答が不正です。\n" + responseText.substring(0, 100) 
       });
     }
 
