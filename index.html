@@ -317,8 +317,8 @@
 </div>
 
 <script>
-  // ★Vercelの中継APIアドレス★
-  const GAS_URL = "/api/kakeibo";
+  // ★重要: Vercelの中継APIの完全なアドレスを指定して、ホーム画面からのURLパースエラーを防ぎます★
+  const GAS_URL = "https://lifestylesupportws.vercel.app/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null;
@@ -736,7 +736,7 @@
       html += `</table>`;
     }
 
-    document.getElementById('report-breakdown-table').innerHTML = html;
+    container.innerHTML = html;
   }
 
   function createHistoryHtml(tx) {
