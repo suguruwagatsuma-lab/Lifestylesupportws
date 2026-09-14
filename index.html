@@ -72,10 +72,7 @@
   </style>
 </head>
 <body>
-
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
-
-<!-- モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -85,30 +82,21 @@
     <div id="modal-content-body"></div>
   </div>
 </div>
-
 <div class="container">
-  <div class="app-header">
-    <div class="app-title">wagatsuma’s家計簿</div>
-  </div>
-
+  <div class="app-header"><div class="app-title">wagatsuma’s家計簿</div></div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
     <div class="tab" onclick="switchTab('register')">📝 登録</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
-
-  <!-- 1. ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <div id="dash-main">
       <div class="total-balance">
-        <div style="font-size: 0.85em; color: #666; font-weight: normal;">💰 現在の総資産</div>
-        <span id="total-balance-amount">¥0</span>
+        <div style="font-size: 0.85em; color: #666; font-weight: normal;">💰 現在の総資産</div><span id="total-balance-amount">¥0</span>
       </div>
-
       <h3>🏦 現在の口座残高</h3>
       <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示</p>
       <div class="account-grid" id="account-container"></div>
-      
       <h3>🔍 メニュー</h3>
       <div class="menu-grid">
         <div class="menu-btn" style="border-color:#28a745; color:#28a745;" onclick="openDashView('report')"><span class="menu-icon">📊</span>分析・レポート</div>
@@ -120,8 +108,6 @@
         <div class="menu-btn" onclick="openDashView('history-all')"><span class="menu-icon">📋</span>すべての履歴</div>
       </div>
     </div>
-
-    <!-- 分析・レポートビュー -->
     <div id="dash-report" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📊 分析・レポート</h3>
@@ -136,7 +122,6 @@
         <label><input type="radio" name="radar-type" value="収入" onchange="renderRadarChart()"> 💰 収入</label>
       </div>
       <div class="chart-container" style="height: 300px;"><canvas id="radarChart"></canvas></div>
-
       <h4 style="margin-top:40px;">📈 収支・項目別の推移 (折れ線グラフ)</h4>
       <p style="font-size:0.8em; color:#666; margin-top:-5px;">※月選択時は「日別」、年選択時は「月別」の推移</p>
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
@@ -145,310 +130,146 @@
       </div>
       <div id="report-trend-summary" class="summary-box" style="display: block; margin-bottom:10px;"></div>
       <div class="chart-container"><canvas id="trendChart"></canvas></div>
-
       <h4 style="margin-top:40px;">📋 内訳データ一覧</h4>
       <div id="report-breakdown-table" style="background:#fff; border:1px solid #eee; border-radius:8px; overflow:hidden;"></div>
     </div>
-
-    <!-- カレンダー・その他のビュー -->
-    <div id="dash-calendar" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>📅 支出カレンダー (タップで修正/削除)</h3>
-      <div id="calendar"></div>
-    </div>
-    <div id="dash-charts" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>📈 月別・口座別の支出推移</h3>
-      <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
-    </div>
-    <div id="dash-history-account" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>🏦 口座別の利用履歴</h3>
-      <select id="filter-account" onchange="renderAccountHistory()"><option value="">口座を選択してください</option></select>
-      <div class="history-list" id="history-container-account"></div>
-    </div>
-    <div id="dash-history-category" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>🏢 店舗・項目別の履歴</h3>
-      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
-        <label style="margin-top: 0;">🔍 履歴を絞り込む</label>
-        <select id="filter-category" onchange="renderCategoryHistory()"><option value="">カテゴリ・店舗を選択してください</option></select>
-      </div>
-      <div id="summary-category" class="summary-box"></div>
-      <div class="history-list" id="history-container-category"></div>
-    </div>
-    <div id="dash-history-all" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>📋 すべての利用履歴</h3>
-      <div class="history-list" id="history-container-all"></div>
-    </div>
+    <div id="dash-calendar" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📅 支出カレンダー (タップで修正/削除)</h3><div id="calendar"></div></div>
+    <div id="dash-charts" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📈 月別・口座別の支出推移</h3><div class="chart-container"><canvas id="monthlyChart"></canvas></div></div>
+    <div id="dash-history-account" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🏦 口座別の利用履歴</h3><select id="filter-account" onchange="renderAccountHistory()"><option value="">口座を選択してください</option></select><div class="history-list" id="history-container-account"></div></div>
+    <div id="dash-history-category" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🏢 店舗・項目別の履歴</h3><div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;"><label style="margin-top: 0;">🔍 履歴を絞り込む</label><select id="filter-category" onchange="renderCategoryHistory()"><option value="">カテゴリ・店舗を選択してください</option></select></div><div id="summary-category" class="summary-box"></div><div class="history-list" id="history-container-category"></div></div>
+    <div id="dash-history-all" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📋 すべての利用履歴</h3><div class="history-list" id="history-container-all"></div></div>
     <div id="dash-simulation" style="display:none;">
-      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
-      <h3>🔮 未来の残高シミュレーション</h3>
-      <p style="font-size:0.85em; color:#666; margin-top:-5px;">未来の確定予定と架空の予定を組み合わせて、口座残高の推移を計算します。</p>
+      <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🔮 未来の残高シミュレーション</h3><p style="font-size:0.85em; color:#666; margin-top:-5px;">未来の確定予定と架空の予定を組み合わせて、口座残高の推移を計算します。</p>
       <div style="background: #e9f5ff; padding: 15px; border-radius: 8px; border: 1px solid #b8daff; margin-bottom: 15px;">
         <label style="margin-top: 0; color:#0056b3;">➕ 架空の予定を追加</label>
-        <div style="display: flex; gap: 8px; margin-top: 4px;">
-          <input type="date" id="sim-date" style="flex:1.5;">
-          <select id="sim-type" style="flex:1;">
-            <option value="支出">💸 支出</option>
-            <option value="収入">💰 収入</option>
-          </select>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <input type="text" id="sim-title" placeholder="内容 (例: ボーナス、旅行)" style="flex:2;">
-          <input type="number" id="sim-amount" placeholder="金額" style="flex:1;">
-        </div>
-        <select id="sim-account" style="margin-top: 8px;"></select>
-        <button class="btn-secondary" style="padding: 10px; margin-top: 15px;" onclick="addSimEvent()">リストに追加して計算</button>
+        <div style="display: flex; gap: 8px; margin-top: 4px;"><input type="date" id="sim-date" style="flex:1.5;"><select id="sim-type" style="flex:1;"><option value="支出">💸 支出</option><option value="収入">💰 収入</option></select></div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;"><input type="text" id="sim-title" placeholder="内容 (例: ボーナス、旅行)" style="flex:2;"><input type="number" id="sim-amount" placeholder="金額" style="flex:1;"></div>
+        <select id="sim-account" style="margin-top: 8px;"></select><button class="btn-secondary" style="padding: 10px; margin-top: 15px;" onclick="addSimEvent()">リストに追加して計算</button>
       </div>
-      <h4>🏦 シミュレーション後の最終残高</h4>
-      <div class="account-grid" id="sim-account-container"></div>
-      <h4>📅 未来の資金推移カレンダー</h4>
-      <div class="history-list" id="sim-history-container"></div>
+      <h4>🏦 シミュレーション後の最終残高</h4><div class="account-grid" id="sim-account-container"></div><h4>📅 未来の資金推移カレンダー</h4><div class="history-list" id="sim-history-container"></div>
     </div>
   </div>
 
-  <!-- 2. 登録 -->
   <div id="register-tab" class="tab-content">
-    <div class="sub-tabs">
-      <div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div>
-      <div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力 (出/入)</div>
-      <div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div>
-    </div>
-
+    <div class="sub-tabs"><div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div><div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力 (出/入)</div><div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div></div>
     <div id="mode-ai" class="sub-tab-content">
-      <label>📷 レシート撮影 / 選択</label>
-      <input type="file" id="file-input" accept="image/*" capture="environment">
-      <img id="preview" />
-      <button id="analyze-btn" disabled>✨ AI解析実行</button>
-
+      <label>📷 レシート撮影 / 選択</label><input type="file" id="file-input" accept="image/*" capture="environment"><img id="preview" /><button id="analyze-btn" disabled>✨ AI解析実行</button>
       <div id="result-form" style="display: none; border-top: 2px dashed #eee; margin-top: 15px; padding-top: 10px;">
-        <h4>解析結果の確認・保存</h4>
-        <label>日付</label><input type="text" id="ai-date" placeholder="YYYY/MM/DD">
-        <label>店舗名</label><input type="text" id="ai-store">
-        <label>金額</label><input type="number" id="ai-amount">
-        <label>カテゴリ</label><select id="ai-category"></select>
-        <label>出金元口座</label><select id="ai-account"></select>
-        <label>メモ</label><input type="text" id="ai-note">
-        <input type="hidden" id="ai-receipt-url">
+        <h4>解析結果の確認・保存</h4><label>日付</label><input type="text" id="ai-date" placeholder="YYYY/MM/DD"><label>店舗名</label><input type="text" id="ai-store"><label>金額</label><input type="number" id="ai-amount">
+        <label>カテゴリ</label><select id="ai-category"></select><label>出金元口座</label><select id="ai-account"></select><label>メモ</label><input type="text" id="ai-note"><input type="hidden" id="ai-receipt-url">
         <button class="btn-secondary" onclick="saveAiTransaction()">💾 確定して登録</button>
       </div>
     </div>
-
     <div id="mode-manual" class="sub-tab-content" style="display: none;">
-      <label>種別</label>
-      <select id="man-type" onchange="toggleManualTypeUI()">
-        <option value="支出">💸 支出 (マイナス)</option>
-        <option value="収入">💰 収入 (プラス)</option>
-      </select>
-      <label>日付</label><input type="date" id="man-date">
-      <label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与">
-      <label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
-      <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select>
-      <label id="lbl-man-account">対象口座</label><select id="man-account"></select>
-      <label>メモ（任意）</label><input type="text" id="man-note">
+      <label>種別</label><select id="man-type" onchange="toggleManualTypeUI()"><option value="支出">💸 支出 (マイナス)</option><option value="収入">💰 収入 (プラス)</option></select>
+      <label>日付</label><input type="date" id="man-date"><label>店舗・用途・収入元</label><input type="text" id="man-store" placeholder="例: スーパー、コンビニ、給与"><label>金額</label><input type="number" id="man-amount" placeholder="例: 1500">
+      <label id="lbl-man-category">カテゴリ</label><select id="man-category"></select><label id="lbl-man-account">対象口座</label><select id="man-account"></select><label>メモ（任意）</label><input type="text" id="man-note">
       <button class="btn-secondary" onclick="saveManualTransaction()">💾 手入力データを登録</button>
     </div>
-
     <div id="mode-transfer" class="sub-tab-content" style="display: none;">
-      <label>日付</label><input type="date" id="trans-date">
-      <label>振替元 (出金口座)</label><select id="trans-from-account"></select>
-      <label>振替先 (入金口座)</label><select id="trans-to-account"></select>
-      <label>移動金額</label><input type="number" id="trans-amount" placeholder="例: 30000">
-      <label>メモ（任意）</label><input type="text" id="trans-note" placeholder="例: チャージ、ATM引き出し">
-      <button class="btn-warning" onclick="saveTransferTransaction()">🔄 口座間移動を実行</button>
+      <label>日付</label><input type="date" id="trans-date"><label>振替元 (出金口座)</label><select id="trans-from-account"></select><label>振替先 (入金口座)</label><select id="trans-to-account"></select>
+      <label>移動金額</label><input type="number" id="trans-amount" placeholder="例: 30000"><label>メモ（任意）</label><input type="text" id="trans-note" placeholder="例: チャージ、ATM引き出し"><button class="btn-warning" onclick="saveTransferTransaction()">🔄 口座間移動を実行</button>
     </div>
   </div>
 
-  <!-- 3. 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     <div class="setting-section" style="border-top: none; margin-top: 0; padding-top: 0;">
-      <h3>📁 カテゴリの管理</h3>
-      <div id="manage-category-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div>
-      <h4>＋ 新しいカテゴリの追加</h4>
-      <input type="text" id="new-category-name" placeholder="カテゴリ名 (例: サブスク、お小遣い)">
-      <button class="btn-outline" style="border-color:#28a745; color:#28a745;" onclick="addNewCategory()">追加する</button>
+      <h3>📁 カテゴリの管理</h3><div id="manage-category-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;"></div><h4>＋ 新しいカテゴリの追加</h4><input type="text" id="new-category-name" placeholder="カテゴリ名 (例: サブスク、お小遣い)"><button class="btn-outline" style="border-color:#28a745; color:#28a745;" onclick="addNewCategory()">追加する</button>
     </div>
     <div class="setting-section">
-      <h3>🏦 口座情報の管理</h3>
-      <div id="manage-account-list"></div>
-      <h4>＋ 新しい口座の追加</h4>
-      <input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)">
-      <input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)">
-      <button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
+      <h3>🏦 口座情報の管理</h3><div id="manage-account-list"></div><h4>＋ 新しい口座の追加</h4><input type="text" id="new-account-name" placeholder="口座名 (例: B銀行)"><input type="number" id="new-account-balance" placeholder="初期金額 (例: 50000)"><button class="btn-outline" style="border-color:#007bff; color:#007bff;" onclick="addNewAccount()">追加する</button>
     </div>
     <div class="setting-section">
-      <h3>📅 Googleカレンダー同期</h3>
-      <p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p>
-      <button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
+      <h3>📅 Googleカレンダー同期</h3><p style="font-size: 0.8em; color: #666;">カレンダーの予定を読み込み、日々の支出実績をカレンダーへ書き戻します。</p><button class="btn-warning" onclick="syncCalendar()">🔄 カレンダーと今すぐ双方向同期</button>
     </div>
     <div class="setting-section">
-      <h3>🤖 AIモデル設定</h3>
-      <label>Gemini モデルバージョン</label>
-      <input type="text" id="setting-model" placeholder="読込中...">
-      <button class="btn-secondary" onclick="saveModelSetting()">⚙️ モデル設定を保存</button>
+      <h3>🤖 AIモデル設定</h3><label>Gemini モデルバージョン</label><input type="text" id="setting-model" placeholder="読込中..."><button class="btn-secondary" onclick="saveModelSetting()">⚙️ モデル設定を保存</button>
     </div>
   </div>
 </div>
 
 <script>
-  // ★ここに「新しいデプロイ」をして取得した最新のGASのURLを貼り付けてください★
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
+  // ★これぞ完全版。PWA（ホーム画面追加）のパースエラーを防ぐためのフルURL★
+  const GAS_URL = "https://lifestylesupportws.vercel.app/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
-  let currentFile = null; let calendarInstance = null; let chartInstance = null;
-  let radarChartInstance = null; let trendChartInstance = null; let appData = null; let simEvents = [];
+  let currentFile = null; let calendarInstance = null; let chartInstance = null; let radarChartInstance = null; let trendChartInstance = null; let appData = null; let simEvents = [];
 
   window.onload = () => {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('man-date').value = today;
-    document.getElementById('trans-date').value = today;
+    document.getElementById('man-date').value = today; document.getElementById('trans-date').value = today;
     fetchInitialData();
   };
 
   function switchTab(tabId) {
-    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    if(tabId === 'dashboard') {
-      document.querySelectorAll('.tab')[0].classList.add('active');
-      document.getElementById('dashboard-tab').classList.add('active');
-      backToDashMain();
-    } else if(tabId === 'register') {
-      document.querySelectorAll('.tab')[1].classList.add('active');
-      document.getElementById('register-tab').classList.add('active');
-    } else {
-      document.querySelectorAll('.tab')[2].classList.add('active');
-      document.getElementById('settings-tab').classList.add('active');
-    }
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    if(tabId === 'dashboard') { document.querySelectorAll('.tab')[0].classList.add('active'); document.getElementById('dashboard-tab').classList.add('active'); backToDashMain(); } 
+    else if(tabId === 'register') { document.querySelectorAll('.tab')[1].classList.add('active'); document.getElementById('register-tab').classList.add('active'); } 
+    else { document.querySelectorAll('.tab')[2].classList.add('active'); document.getElementById('settings-tab').classList.add('active'); }
   }
 
   function switchSubTab(subMode) {
-    document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
-    if(subMode === 'ai') {
-      document.querySelectorAll('.sub-tab')[0].classList.add('active');
-      document.getElementById('mode-ai').style.display = 'block';
-    } else if(subMode === 'manual') {
-      document.querySelectorAll('.sub-tab')[1].classList.add('active');
-      document.getElementById('mode-manual').style.display = 'block';
-    } else {
-      document.querySelectorAll('.sub-tab')[2].classList.add('active');
-      document.getElementById('mode-transfer').style.display = 'block';
-    }
+    document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active')); document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+    if(subMode === 'ai') { document.querySelectorAll('.sub-tab')[0].classList.add('active'); document.getElementById('mode-ai').style.display = 'block'; } 
+    else if(subMode === 'manual') { document.querySelectorAll('.sub-tab')[1].classList.add('active'); document.getElementById('mode-manual').style.display = 'block'; } 
+    else { document.querySelectorAll('.sub-tab')[2].classList.add('active'); document.getElementById('mode-transfer').style.display = 'block'; }
   }
 
   function toggleManualTypeUI() {
-    const type = document.getElementById('man-type').value;
-    document.getElementById('lbl-man-account').innerText = type === '収入' ? '入金先口座' : '出金元口座';
+    document.getElementById('lbl-man-account').innerText = document.getElementById('man-type').value === '収入' ? '入金先口座' : '出金元口座';
   }
 
-  // ★最強の解決策：Safari PWAのバグとGoogleボット検知を回避する「Form送信＋iframe」ハック★
-  function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
-    return new Promise((resolve, reject) => {
-      showLoader(true, loadingMsg);
-      payload.token = SECRET_TOKEN;
-
-      const iframeName = "gasFrame_" + new Date().getTime();
-      const iframe = document.createElement('iframe');
-      iframe.name = iframeName;
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = GAS_URL;
-      form.target = iframeName;
-      form.style.display = 'none';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload'; 
-      input.value = JSON.stringify(payload);
-      form.appendChild(input);
-      document.body.appendChild(form);
-
-      const messageHandler = function(e) {
-        if (e.data && typeof e.data.success !== 'undefined') {
-          window.removeEventListener('message', messageHandler);
-          document.body.removeChild(form);
-          setTimeout(() => { if(document.body.contains(iframe)) document.body.removeChild(iframe); }, 1000);
-          showLoader(false);
-
-          if (!e.data.success) {
-            alert("エラーが発生しました:\n" + e.data.error);
-            reject(new Error(e.data.error));
-          } else {
-            resolve(e.data);
-          }
-        }
-      };
-      window.addEventListener('message', messageHandler);
-      form.submit();
-    });
+  // ★Vercelを経由する正規のfetch通信。これで全てが安定します★
+  async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
+    showLoader(true, loadingMsg);
+    payload.token = SECRET_TOKEN;
+    try {
+      const res = await fetch(GAS_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      showLoader(false);
+      if (!json.success) { alert("エラーが発生しました:\n" + json.error); throw new Error(json.error); }
+      return json;
+    } catch (err) {
+      showLoader(false); alert("通信に失敗しました。\n" + err.message); throw err;
+    }
   }
 
-  function showLoader(show, msg = "高速処理中...⚡") {
-    document.getElementById('loader-msg').innerText = msg;
-    document.getElementById('global-loader').style.display = show ? 'block' : 'none';
-  }
+  function showLoader(show, msg = "高速処理中...⚡") { document.getElementById('loader-msg').innerText = msg; document.getElementById('global-loader').style.display = show ? 'block' : 'none'; }
 
-  // --- これ以下の機能関数は変更なし ---
   async function fetchInitialData() {
-    const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡");
-    appData = res.data;
-
-    let totalCurrent = 0;
-    const accContainer = document.getElementById('account-container');
-    const filterAcc = document.getElementById('filter-account');
-    const aiAcc = document.getElementById('ai-account');
-    const manAcc = document.getElementById('man-account');
-    const transFrom = document.getElementById('trans-from-account');
-    const transTo = document.getElementById('trans-to-account');
-    const manageAccList = document.getElementById('manage-account-list');
+    const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡"); appData = res.data;
+    let totalCurrent = 0; const accContainer = document.getElementById('account-container'); const filterAcc = document.getElementById('filter-account');
+    const aiAcc = document.getElementById('ai-account'); const manAcc = document.getElementById('man-account'); const transFrom = document.getElementById('trans-from-account');
+    const transTo = document.getElementById('trans-to-account'); const manageAccList = document.getElementById('manage-account-list');
     
     accContainer.innerHTML = ''; aiAcc.innerHTML = '<option value="">口座を選択</option>'; manAcc.innerHTML = '<option value="">口座を選択</option>';
-    transFrom.innerHTML = '<option value="">出金元を選択</option>'; transTo.innerHTML = '<option value="">入金先を選択</option>'; manageAccList.innerHTML = '';
-    filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
+    transFrom.innerHTML = '<option value="">出金元を選択</option>'; transTo.innerHTML = '<option value="">入金先を選択</option>'; manageAccList.innerHTML = ''; filterAcc.innerHTML = '<option value="">口座を選択してください</option>';
 
     for (const [name, val] of Object.entries(appData.accounts)) {
       totalCurrent += val.current;
-      let futureHtml = '';
-      if (val.current !== val.future) futureHtml = `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(見込: ¥${val.future.toLocaleString()})</span>`;
+      let futureHtml = val.current !== val.future ? `<span style="font-size: 0.75em; color: #888; font-weight: normal; margin-top: 2px;">(見込: ¥${val.future.toLocaleString()})</span>` : '';
       accContainer.innerHTML += `<div class="account-card">${name}<span>¥${val.current.toLocaleString()}</span>${futureHtml}</div>`;
-      
       const opt = `<option value="${name}">${name}</option>`;
       aiAcc.innerHTML += opt; manAcc.innerHTML += opt; transFrom.innerHTML += opt; transTo.innerHTML += opt; filterAcc.innerHTML += opt;
-
-      manageAccList.innerHTML += `
-        <div class="account-list-item">
-          <strong>${name}</strong>
-          <input type="number" id="edit-acc-${name}" value="${val.initial}">
-          <button class="btn-secondary" onclick="saveAccount('${name}', document.getElementById('edit-acc-${name}').value)">更新</button>
-        </div>`;
+      manageAccList.innerHTML += `<div class="account-list-item"><strong>${name}</strong><input type="number" id="edit-acc-${name}" value="${val.initial}"><button class="btn-secondary" onclick="saveAccount('${name}', document.getElementById('edit-acc-${name}').value)">更新</button></div>`;
     }
-
     document.getElementById('total-balance-amount').innerText = `¥${totalCurrent.toLocaleString()}`;
 
     const catOpts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('ai-category').innerHTML = catOpts;
-    document.getElementById('man-category').innerHTML = catOpts;
+    document.getElementById('ai-category').innerHTML = catOpts; document.getElementById('man-category').innerHTML = catOpts;
     document.getElementById('manage-category-list').innerHTML = appData.categories.map(c => `<div class="category-badge">${c}</div>`).join('');
 
     const uniqueStores = [...new Set(appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.title && t.title !== '取引').map(t => t.title))].sort();
     const filterCatOpts = appData.categories.map(c => `<option value="cat_${c}">📁 カテゴリ: ${c}</option>`).join('');
     const filterStoreOpts = uniqueStores.map(s => `<option value="store_${s}">🏪 店舗/内容: ${s}</option>`).join('');
-    
     document.getElementById('filter-category').innerHTML = `<option value="">項目を選択してください</option>` + filterCatOpts + filterStoreOpts;
     document.getElementById('report-target').innerHTML = `<option value="total_balance">全体の収支 (収入・支出・差引)</option>` + filterCatOpts + filterStoreOpts;
 
-    const periods = new Set();
-    appData.transactions.forEach(tx => {
-      if(tx.date) { periods.add(tx.date.substring(0, 4) + "年"); periods.add(tx.date.substring(0, 7)); }
-    });
-    const sortedPeriods = [...periods].sort().reverse();
-    document.getElementById('report-period').innerHTML = `<option value="all">全期間</option>` + sortedPeriods.map(p => `<option value="${p}">${p}</option>`).join('');
+    const periods = new Set(); appData.transactions.forEach(tx => { if(tx.date) { periods.add(tx.date.substring(0, 4) + "年"); periods.add(tx.date.substring(0, 7)); } });
+    document.getElementById('report-period').innerHTML = `<option value="all">全期間</option>` + [...periods].sort().reverse().map(p => `<option value="${p}">${p}</option>`).join('');
     document.getElementById('setting-model').value = appData.settings['GeminiModelVersion'] || '';
   }
 
@@ -466,35 +287,23 @@
     if (view === 'history-all') renderHistoryList(appData.transactions, 'history-container-all');
     if (view === 'report') renderAllReports();
     if (view === 'simulation') {
-      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-      document.getElementById('sim-date').value = tomorrow.toISOString().split('T')[0];
-      document.getElementById('sim-account').innerHTML = Object.keys(appData.accounts).map(a => `<option value="${a}">${a}</option>`).join('');
-      renderSimulation();
+      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); document.getElementById('sim-date').value = tomorrow.toISOString().split('T')[0];
+      document.getElementById('sim-account').innerHTML = Object.keys(appData.accounts).map(a => `<option value="${a}">${a}</option>`).join(''); renderSimulation();
     }
   }
 
   function renderAllReports() { renderRadarChart(); renderTrendChart(); renderBreakdownTable(); }
 
   function renderRadarChart() {
-    const period = document.getElementById('report-period').value;
-    const type = document.querySelector('input[name="radar-type"]:checked').value;
+    const period = document.getElementById('report-period').value; const type = document.querySelector('input[name="radar-type"]:checked').value;
     let txs = appData.transactions.filter(t => t.type === type);
-    if (period !== 'all') {
-      if (period.includes('年')) txs = txs.filter(t => t.date.startsWith(period.replace('年', '')));
-      else txs = txs.filter(t => t.date.startsWith(period)); 
-    }
+    if (period !== 'all') { if (period.includes('年')) { txs = txs.filter(t => t.date.startsWith(period.replace('年', ''))); } else { txs = txs.filter(t => t.date.startsWith(period)); } }
     const categoryTotals = {}; appData.categories.forEach(c => categoryTotals[c] = 0);
     txs.forEach(t => { if (categoryTotals[t.category] !== undefined) categoryTotals[t.category] += Number(t.amount); });
-
     const labels = Object.keys(categoryTotals); const data = Object.values(categoryTotals);
-    const bgColor = type === '支出' ? 'rgba(217, 83, 79, 0.2)' : 'rgba(40, 167, 69, 0.2)';
-    const borderColor = type === '支出' ? '#d9534f' : '#28a745';
-    const ctx = document.getElementById('radarChart').getContext('2d');
-    if (radarChartInstance) radarChartInstance.destroy();
-    radarChartInstance = new Chart(ctx, {
-      type: 'radar', data: { labels: labels, datasets: [{ label: `${type}額`, data: data, backgroundColor: bgColor, borderColor: borderColor, pointBackgroundColor: borderColor, borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, scales: { r: { ticks: { display: false }, beginAtZero: true } } }
-    });
+    const bgColor = type === '支出' ? 'rgba(217, 83, 79, 0.2)' : 'rgba(40, 167, 69, 0.2)'; const borderColor = type === '支出' ? '#d9534f' : '#28a745';
+    const ctx = document.getElementById('radarChart').getContext('2d'); if (radarChartInstance) radarChartInstance.destroy();
+    radarChartInstance = new Chart(ctx, { type: 'radar', data: { labels: labels, datasets: [{ label: `${type}額`, data: data, backgroundColor: bgColor, borderColor: borderColor, pointBackgroundColor: borderColor, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { ticks: { display: false }, beginAtZero: true } } } });
   }
 
   function renderTrendChart() {
@@ -506,8 +315,7 @@
     let titleStr = ''; let keys = []; let displayLabels = [];
 
     if (period === 'all') {
-      const mSet = new Set(); txs.forEach(t => mSet.add(t.date.substring(0, 7)));
-      keys = [...mSet].sort(); displayLabels = keys.map(k => Number(k.substring(5, 7)) + '月'); titleStr = '全期間';
+      const mSet = new Set(); txs.forEach(t => mSet.add(t.date.substring(0, 7))); keys = [...mSet].sort(); displayLabels = keys.map(k => Number(k.substring(5, 7)) + '月'); titleStr = '全期間';
     } else if (period.includes('年')) {
       const year = period.replace('年', ''); txs = txs.filter(t => t.date.startsWith(year));
       for(let i=1; i<=12; i++) { keys.push(`${year}-${String(i).padStart(2, '0')}`); displayLabels.push(`${i}月`); } titleStr = `${year}年`;
@@ -517,43 +325,34 @@
     }
 
     let datasets = []; let summaryHtml = '';
-
     if (target === 'total_balance') {
       titleStr += ' の全体収支推移';
-      const incData = keys.map(k => 0); const expData = keys.map(k => 0); const proData = keys.map(k => 0);
-      let tInc = 0; let tExp = 0;
+      const incData = keys.map(k => 0); const expData = keys.map(k => 0); const proData = keys.map(k => 0); let tInc = 0; let tExp = 0;
       txs.forEach(t => {
-        let key = period === 'all' || period.includes('年') ? t.date.substring(0, 7) : t.date;
-        let idx = keys.indexOf(key);
+        let key = period === 'all' || period.includes('年') ? t.date.substring(0, 7) : t.date; let idx = keys.indexOf(key);
         if (idx !== -1) { if (t.type === '収入') { incData[idx] += Number(t.amount); tInc += Number(t.amount); } else if (t.type === '支出') { expData[idx] += Number(t.amount); tExp += Number(t.amount); } }
       });
       for(let i=0; i<keys.length; i++) proData[i] = incData[i] - expData[i];
       let tPro = tInc - tExp; let pColor = tPro >= 0 ? '#28a745' : '#d9534f'; let pSign = tPro > 0 ? '+' : '';
-
       summaryHtml = `<div style="display:flex; justify-content:space-between; text-align:center;"><div style="flex:1;">収入<br><span style="color:#28a745; font-size:1.1em;">¥${tInc.toLocaleString()}</span></div><div style="flex:1;">支出<br><span style="color:#d9534f; font-size:1.1em;">¥${tExp.toLocaleString()}</span></div><div style="flex:1;">差引<br><span style="color:${pColor}; font-size:1.1em;">${pSign}¥${tPro.toLocaleString()}</span></div></div>`;
       datasets = [ { label: '収入', data: incData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', borderWidth: 2, tension: 0.3 }, { label: '支出', data: expData, borderColor: '#d9534f', backgroundColor: 'rgba(217,83,79,0.1)', borderWidth: 2, tension: 0.3 }, { label: '差引', data: proData, borderColor: '#007bff', backgroundColor: 'transparent', borderDash: [5, 5], borderWidth: 2, tension: 0.3 } ];
     } else {
       let filtered = txs; let targetName = '';
       if (target.startsWith('cat_')) { const cat = target.replace('cat_', ''); filtered = txs.filter(t => t.category === cat); targetName = `カテゴリ「${cat}」`; } 
       else if (target.startsWith('store_')) { const store = target.replace('store_', ''); filtered = txs.filter(t => t.title === store); targetName = `店舗/項目「${store}」`; }
-
       titleStr = `${titleStr} の ${targetName} 推移`;
       const dataArr = keys.map(k => 0); let totalIn = 0; let totalOut = 0;
       filtered.forEach(t => {
-        let key = period === 'all' || period.includes('年') ? t.date.substring(0, 7) : t.date;
-        let idx = keys.indexOf(key);
+        let key = period === 'all' || period.includes('年') ? t.date.substring(0, 7) : t.date; let idx = keys.indexOf(key);
         if (idx !== -1) { if(t.type === '収入') { dataArr[idx] += Number(t.amount); totalIn += Number(t.amount); } else if (t.type === '支出') { dataArr[idx] += Number(t.amount); totalOut += Number(t.amount); } }
       });
-
       let diff = totalIn - totalOut; let dColor = diff >= 0 ? '#28a745' : '#d9534f'; let sign = diff > 0 ? '+' : '';
       if (totalIn > 0 && totalOut > 0) { summaryHtml = `<div style="display:flex; justify-content:space-between; text-align:center;"><div style="flex:1;">収入<br><span style="color:#28a745; font-size:1.1em;">¥${totalIn.toLocaleString()}</span></div><div style="flex:1;">支出<br><span style="color:#d9534f; font-size:1.1em;">¥${totalOut.toLocaleString()}</span></div><div style="flex:1;">差引<br><span style="color:${dColor}; font-size:1.1em;">${sign}¥${diff.toLocaleString()}</span></div></div>`; } 
       else if (totalIn > 0) { summaryHtml = `${targetName} の収入合計:<br><span style="font-size:1.3em; color:#28a745;">+¥${totalIn.toLocaleString()}</span>`; } 
       else { summaryHtml = `${targetName} の支出合計:<br><span style="font-size:1.3em; color:#d9534f;">-¥${totalOut.toLocaleString()}</span>`; }
-
       const mainColor = totalIn >= totalOut ? '#28a745' : '#d9534f'; const bgColor = totalIn >= totalOut ? 'rgba(40,167,69,0.1)' : 'rgba(217,83,79,0.1)';
       datasets = [{ label: '金額', data: dataArr, borderColor: mainColor, backgroundColor: bgColor, borderWidth: 2, fill: true, tension: 0.3 }];
     }
-
     summaryBox.style.display = 'block'; summaryBox.innerHTML = summaryHtml;
     const ctx = document.getElementById('trendChart').getContext('2d');
     if (trendChartInstance) trendChartInstance.destroy();
@@ -562,9 +361,7 @@
 
   function renderBreakdownTable() {
     const period = document.getElementById('report-period').value; const target = document.getElementById('report-target').value;
-    const container = document.getElementById('report-breakdown-table');
-    if (!target) { container.innerHTML = ''; return; }
-
+    const container = document.getElementById('report-breakdown-table'); if (!target) { container.innerHTML = ''; return; }
     let txs = appData.transactions;
     if (period !== 'all') { if (period.includes('年')) { txs = txs.filter(t => t.date.startsWith(period.replace('年', ''))); } else { txs = txs.filter(t => t.date.startsWith(period)); } }
 
@@ -576,14 +373,10 @@
       const storeMap = {}; expTxs.forEach(t => { storeMap[t.title] = (storeMap[t.title] || 0) + Number(t.amount); });
       const storeArr = Object.keys(storeMap).map(k => ({ name: k || '不明', amount: storeMap[k] })).sort((a,b)=>b.amount - a.amount);
 
-      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">💸 支出カテゴリ ランキング</div>`;
-      html += `<table class="breakdown-table"><tr><th>カテゴリ</th><th style="text-align:right;">金額</th></tr>`;
+      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">💸 支出カテゴリ ランキング</div><table class="breakdown-table"><tr><th>カテゴリ</th><th style="text-align:right;">金額</th></tr>`;
       if(catArr.length===0) html += `<tr><td colspan="2" style="text-align:center; color:#888;">データなし</td></tr>`;
       catArr.forEach(item => { html += `<tr><td>${item.name}</td><td class="amount">-¥${item.amount.toLocaleString()}</td></tr>`; });
-      html += `</table>`;
-
-      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee; border-top:1px solid #eee;">🏪 支出店舗 ランキング (Top 10)</div>`;
-      html += `<table class="breakdown-table"><tr><th>店舗・用途</th><th style="text-align:right;">金額</th></tr>`;
+      html += `</table><div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee; border-top:1px solid #eee;">🏪 支出店舗 ランキング (Top 10)</div><table class="breakdown-table"><tr><th>店舗・用途</th><th style="text-align:right;">金額</th></tr>`;
       if(storeArr.length===0) html += `<tr><td colspan="2" style="text-align:center; color:#888;">データなし</td></tr>`;
       storeArr.slice(0, 10).forEach(item => { html += `<tr><td>${item.name}</td><td class="amount">-¥${item.amount.toLocaleString()}</td></tr>`; });
       html += `</table>`;
@@ -591,9 +384,7 @@
       const cat = target.replace('cat_', ''); const expTxs = txs.filter(t => t.type === '支出' && t.category === cat);
       const storeMap = {}; expTxs.forEach(t => { storeMap[t.title] = (storeMap[t.title] || 0) + Number(t.amount); });
       const storeArr = Object.keys(storeMap).map(k => ({ name: k || '不明', amount: storeMap[k] })).sort((a,b)=>b.amount - a.amount);
-
-      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">📁 カテゴリ「${cat}」の内訳 (店舗別)</div>`;
-      html += `<table class="breakdown-table"><tr><th>店舗・用途</th><th style="text-align:right;">金額</th></tr>`;
+      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">📁 カテゴリ「${cat}」の内訳 (店舗別)</div><table class="breakdown-table"><tr><th>店舗・用途</th><th style="text-align:right;">金額</th></tr>`;
       if(storeArr.length===0) html += `<tr><td colspan="2" style="text-align:center; color:#888;">データなし</td></tr>`;
       storeArr.forEach(item => { html += `<tr><td>${item.name}</td><td class="amount">-¥${item.amount.toLocaleString()}</td></tr>`; });
       html += `</table>`;
@@ -606,9 +397,7 @@
         if (t.type === '支出') dateMap[dStr] -= Number(t.amount); if (t.type === '収入') dateMap[dStr] += Number(t.amount);
       });
       const dateArr = Object.keys(dateMap).sort().reverse().map(k => ({ name: k, amount: dateMap[k] }));
-
-      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">🏪 店舗「${store}」の期間別 内訳</div>`;
-      html += `<table class="breakdown-table"><tr><th>期間</th><th style="text-align:right;">収支</th></tr>`;
+      html += `<div style="padding:10px; background:#f4f7f6; font-weight:bold; border-bottom:1px solid #eee;">🏪 店舗「${store}」の期間別 内訳</div><table class="breakdown-table"><tr><th>期間</th><th style="text-align:right;">収支</th></tr>`;
       if(dateArr.length===0) html += `<tr><td colspan="2" style="text-align:center; color:#888;">データなし</td></tr>`;
       dateArr.forEach(item => {
         const color = item.amount >= 0 ? '#28a745' : '#d9534f'; const sign = item.amount > 0 ? '+' : '';
@@ -622,37 +411,25 @@
   function createHistoryHtml(tx) {
     let amtColor = '#d9534f'; let prefix = '-¥';
     if (tx.type === '収入') { amtColor = '#28a745'; prefix = '+¥'; } else if (tx.type === '振替') { amtColor = '#6c757d'; prefix = '¥'; }
-    return `
-      <div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'>
-        <div class="history-main"><div class="history-store">${tx.title}</div><div class="history-sub">${tx.date} | ${tx.type} (${tx.account})</div></div>
-        <div class="history-amount" style="color: ${amtColor}">${prefix}${Number(tx.amount).toLocaleString()}</div>
-      </div>`;
+    return `<div class="history-item" onclick='showDetailModal(${JSON.stringify(tx).replace(/'/g, "&apos;")}, false)'><div class="history-main"><div class="history-store">${tx.title}</div><div class="history-sub">${tx.date} | ${tx.type} (${tx.account})</div></div><div class="history-amount" style="color: ${amtColor}">${prefix}${Number(tx.amount).toLocaleString()}</div></div>`;
   }
-
   function renderHistoryList(txs, containerId) {
     const container = document.getElementById(containerId);
     if (!txs || txs.length === 0) { container.innerHTML = '<div style="padding: 15px; text-align: center; color: #888;">履歴はありません。</div>'; return; }
     container.innerHTML = [...txs].reverse().map(tx => createHistoryHtml(tx)).join('');
   }
-
   function renderAccountHistory() {
-    const acc = document.getElementById('filter-account').value;
-    if (!acc) { document.getElementById('history-container-account').innerHTML = ''; return; }
+    const acc = document.getElementById('filter-account').value; if (!acc) { document.getElementById('history-container-account').innerHTML = ''; return; }
     renderHistoryList(appData.transactions.filter(t => t.account === acc || (t.type === '振替' && t.toAccount === acc)), 'history-container-account');
   }
-
   function renderCategoryHistory() {
     const val = document.getElementById('filter-category').value; const summaryBox = document.getElementById('summary-category');
     if (!val) { document.getElementById('history-container-category').innerHTML = ''; summaryBox.style.display = 'none'; return; }
     let filtered = []; let title = '';
-    if (val.startsWith('cat_')) {
-      const cat = val.replace('cat_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.category === cat); title = `カテゴリ「${cat}」`;
-    } else if (val.startsWith('store_')) {
-      const store = val.replace('store_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.title === store); title = `店舗「${store}」`;
-    }
+    if (val.startsWith('cat_')) { const cat = val.replace('cat_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.category === cat); title = `カテゴリ「${cat}」`; } 
+    else if (val.startsWith('store_')) { const store = val.replace('store_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.title === store); title = `店舗「${store}」`; }
     let tIn = 0; let tOut = 0;
     filtered.forEach(t => { if(t.type==='収入') tIn += Number(t.amount); else if(t.type==='支出') tOut += Number(t.amount); });
-    
     summaryBox.style.display = 'block';
     if(tIn > 0 && tOut > 0) {
       let diff = tIn - tOut; let c = diff>=0?'#28a745':'#d9534f'; let s = diff>0?'+':'';
@@ -666,9 +443,7 @@
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const months = Object.keys(monthlyStats).sort(); const accountNames = Object.keys(appData.accounts);
     const colors = ['#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
-    const datasets = accountNames.map((accName, idx) => {
-      return { label: accName, data: months.map(m => monthlyStats[m][accName] || 0), backgroundColor: colors[idx % colors.length] };
-    });
+    const datasets = accountNames.map((accName, idx) => { return { label: accName, data: months.map(m => monthlyStats[m][accName] || 0), backgroundColor: colors[idx % colors.length] }; });
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, { type: 'bar', data: { labels: months, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } });
   }
@@ -692,8 +467,7 @@
     const account = document.getElementById('sim-account').value;
     if (!date || !title || !amount) { alert("日付、内容、金額を正しく入力してください"); return; }
     simEvents.push({ id: 'sim_' + new Date().getTime(), date: date.replace(/\//g, '-'), type: type, title: title, amount: amount, account: account, source: 'simulation' });
-    document.getElementById('sim-title').value = ''; document.getElementById('sim-amount').value = '';
-    renderSimulation();
+    document.getElementById('sim-title').value = ''; document.getElementById('sim-amount').value = ''; renderSimulation();
   }
 
   function removeSimEvent(id) { simEvents = simEvents.filter(e => e.id !== id); renderSimulation(); }
@@ -734,8 +508,7 @@
     });
 
     document.getElementById('sim-history-container').innerHTML = historyHtml || '<div style="padding: 15px; text-align: center; color: #888;">未来の予定はありません。</div>';
-    let accHtml = '';
-    for (const [name, bal] of Object.entries(simAccounts)) { accHtml += `<div class="account-card" style="background:#fff3cd; border-color:#ffeeba;">${name}<span style="color:#856404;">¥${bal.toLocaleString()}</span></div>`; }
+    let accHtml = ''; for (const [name, bal] of Object.entries(simAccounts)) { accHtml += `<div class="account-card" style="background:#fff3cd; border-color:#ffeeba;">${name}<span style="color:#856404;">¥${bal.toLocaleString()}</span></div>`; }
     document.getElementById('sim-account-container').innerHTML = accHtml;
   }
 
@@ -752,8 +525,7 @@
 
       bodyEl.innerHTML = `
         <input type="hidden" id="edit-id" value="${data.id}">
-        <label>種別</label>
-        <select id="edit-type"><option value="支出" ${data.type === '支出' ? 'selected' : ''}>💸 支出</option><option value="収入" ${data.type === '収入' ? 'selected' : ''}>💰 収入</option><option value="振替" ${data.type === '振替' ? 'selected' : ''}>🔄 口座振替</option></select>
+        <label>種別</label><select id="edit-type"><option value="支出" ${data.type === '支出' ? 'selected' : ''}>💸 支出</option><option value="収入" ${data.type === '収入' ? 'selected' : ''}>💰 収入</option><option value="振替" ${data.type === '振替' ? 'selected' : ''}>🔄 口座振替</option></select>
         <label>日付</label><input type="date" id="edit-date" value="${data.date.replace(/\//g, '-')}">
         <label>内容/店舗</label><input type="text" id="edit-store" value="${data.title || ''}">
         <label>金額</label><input type="number" id="edit-amount" value="${data.amount}">
@@ -810,7 +582,6 @@
       showLoader(true, "写真を爆速圧縮中...🗜️");
       const compressedDataUrl = await compressImage(currentFile, 1024, 0.6);
       const res = await postToGAS({ action: 'analyze', base64Data: compressedDataUrl.split(',')[1], mimeType: 'image/jpeg' }, "Geminiで高速解析中...🤖");
-
       document.getElementById('ai-date').value = res.data.date || ''; document.getElementById('ai-store').value = res.data.store || '';
       document.getElementById('ai-amount').value = res.data.amount || ''; document.getElementById('ai-category').value = res.data.category || '';
       document.getElementById('ai-receipt-url').value = res.receiptUrl || ''; document.getElementById('result-form').style.display = 'block';
@@ -820,8 +591,7 @@
   async function saveAiTransaction() {
     const acc = document.getElementById('ai-account').value; if (!acc) { alert("出金元口座を選択してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
-      type: '支出', date: document.getElementById('ai-date').value, store: document.getElementById('ai-store').value, amount: document.getElementById('ai-amount').value, category: document.getElementById('ai-category').value,
-      account: acc, note: document.getElementById('ai-note').value, receiptUrl: document.getElementById('ai-receipt-url').value
+      type: '支出', date: document.getElementById('ai-date').value, store: document.getElementById('ai-store').value, amount: document.getElementById('ai-amount').value, category: document.getElementById('ai-category').value, account: acc, note: document.getElementById('ai-note').value, receiptUrl: document.getElementById('ai-receipt-url').value
     }}, "データ保存中...");
     alert("登録完了しました！"); resetRegisterForm();
   }
@@ -830,8 +600,7 @@
     const amount = document.getElementById('man-amount').value; const acc = document.getElementById('man-account').value;
     if (!amount) { alert("金額を入力してください"); return; } if (!acc) { alert("対象口座を選択してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
-      type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'),
-      store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value, account: acc, note: document.getElementById('man-note').value
+      type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'), store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value, account: acc, note: document.getElementById('man-note').value
     }}, "手入力データ保存中...");
     alert("登録完了しました！"); resetRegisterForm();
   }
@@ -840,8 +609,7 @@
     const fromAcc = document.getElementById('trans-from-account').value, toAcc = document.getElementById('trans-to-account').value, amount = document.getElementById('trans-amount').value;
     if (!fromAcc || !toAcc) { alert("出金口座と入金口座を両方選択してください"); return; } if (fromAcc === toAcc) { alert("異なる口座を選んでください"); return; } if (!amount) { alert("金額を入力してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
-      type: '振替', date: document.getElementById('trans-date').value.replace(/-/g, '/'), store: '口座間移動',
-      amount: amount, category: '口座振替', account: fromAcc, toAccount: toAcc, note: document.getElementById('trans-note').value
+      type: '振替', date: document.getElementById('trans-date').value.replace(/-/g, '/'), store: '口座間移動', amount: amount, category: '口座振替', account: fromAcc, toAccount: toAcc, note: document.getElementById('trans-note').value
     }}, "口座間移動を処理中...");
     alert("口座間移動を登録しました！"); resetRegisterForm();
   }
@@ -853,8 +621,7 @@
   }
 
   async function saveModelSetting() {
-    const model = document.getElementById('setting-model').value;
-    await postToGAS({ action: 'updateSetting', key: 'GeminiModelVersion', value: model }, "設定保存中...");
+    await postToGAS({ action: 'updateSetting', key: 'GeminiModelVersion', value: document.getElementById('setting-model').value }, "設定保存中...");
     alert("モデル設定を保存しました。");
   }
 
@@ -866,16 +633,14 @@
   async function addNewAccount() {
     const name = document.getElementById('new-account-name').value, bal = document.getElementById('new-account-balance').value;
     if (!name) { alert("口座名を入力してください"); return; }
-    await saveAccount(name, bal || 0);
-    document.getElementById('new-account-name').value = ''; document.getElementById('new-account-balance').value = '';
+    await saveAccount(name, bal || 0); document.getElementById('new-account-name').value = ''; document.getElementById('new-account-balance').value = '';
   }
 
   async function addNewCategory() {
     const name = document.getElementById('new-category-name').value;
     if (!name) { alert("カテゴリ名を入力してください"); return; }
     await postToGAS({ action: 'addCategory', categoryName: name }, "カテゴリ追加中...");
-    alert(`カテゴリ「${name}」を追加しました！`);
-    document.getElementById('new-category-name').value = ''; fetchInitialData();
+    alert(`カテゴリ「${name}」を追加しました！`); document.getElementById('new-category-name').value = ''; fetchInitialData();
   }
 
   async function syncCalendar() {
