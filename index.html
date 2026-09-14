@@ -72,7 +72,10 @@
   </style>
 </head>
 <body>
+
 <div id="global-loader"><div id="loader-msg">高速処理中...⚡</div></div>
+
+<!-- モーダル -->
 <div id="detail-modal" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -82,21 +85,30 @@
     <div id="modal-content-body"></div>
   </div>
 </div>
+
 <div class="container">
-  <div class="app-header"><div class="app-title">wagatsuma’s家計簿</div></div>
+  <div class="app-header">
+    <div class="app-title">wagatsuma’s家計簿</div>
+  </div>
+
   <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard')">📊 ダッシュ</div>
     <div class="tab" onclick="switchTab('register')">📝 登録</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ 設定</div>
   </div>
+
+  <!-- 1. ダッシュボード -->
   <div id="dashboard-tab" class="tab-content active">
     <div id="dash-main">
       <div class="total-balance">
-        <div style="font-size: 0.85em; color: #666; font-weight: normal;">💰 現在の総資産</div><span id="total-balance-amount">¥0</span>
+        <div style="font-size: 0.85em; color: #666; font-weight: normal;">💰 現在の総資産</div>
+        <span id="total-balance-amount">¥0</span>
       </div>
+
       <h3>🏦 現在の口座残高</h3>
       <p style="font-size: 0.8em; color: #666; margin-top: -10px;">※未来の日付の入出金は、下の(見込)として表示</p>
       <div class="account-grid" id="account-container"></div>
+      
       <h3>🔍 メニュー</h3>
       <div class="menu-grid">
         <div class="menu-btn" style="border-color:#28a745; color:#28a745;" onclick="openDashView('report')"><span class="menu-icon">📊</span>分析・レポート</div>
@@ -108,31 +120,47 @@
         <div class="menu-btn" onclick="openDashView('history-all')"><span class="menu-icon">📋</span>すべての履歴</div>
       </div>
     </div>
+
+    <!-- 分析・レポートビュー -->
     <div id="dash-report" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📊 分析・レポート</h3>
+      
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
         <label style="margin-top: 0;">📅 対象の「月」または「年」を選ぶ</label>
-        <select id="report-period" onchange="renderAllReports()"></select>
+        <select id="report-period" onchange="renderAllReports()">
+        </select>
       </div>
+
       <h4>🕸 カテゴリバランス (六角形グラフ)</h4>
       <p style="font-size:0.8em; color:#666; margin-top:-5px;">※選択期間のカテゴリ別割合</p>
+      
       <div class="radio-group">
         <label><input type="radio" name="radar-type" value="支出" checked onchange="renderRadarChart()"> 💸 支出</label>
         <label><input type="radio" name="radar-type" value="収入" onchange="renderRadarChart()"> 💰 収入</label>
       </div>
-      <div class="chart-container" style="height: 300px;"><canvas id="radarChart"></canvas></div>
+      <div class="chart-container" style="height: 300px;">
+        <canvas id="radarChart"></canvas>
+      </div>
+
       <h4 style="margin-top:40px;">📈 収支・項目別の推移 (折れ線グラフ)</h4>
       <p style="font-size:0.8em; color:#666; margin-top:-5px;">※月選択時は「日別」、年選択時は「月別」の推移</p>
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
         <label style="margin-top: 0;">🔍 表示する項目を選ぶ</label>
-        <select id="report-target" onchange="renderTrendChart(); renderBreakdownTable();"></select>
+        <select id="report-target" onchange="renderTrendChart(); renderBreakdownTable();">
+        </select>
       </div>
+      
       <div id="report-trend-summary" class="summary-box" style="display: block; margin-bottom:10px;"></div>
-      <div class="chart-container"><canvas id="trendChart"></canvas></div>
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+
       <h4 style="margin-top:40px;">📋 内訳データ一覧</h4>
       <div id="report-breakdown-table" style="background:#fff; border:1px solid #eee; border-radius:8px; overflow:hidden;"></div>
     </div>
+
+    <!-- その他のビュー -->
     <div id="dash-calendar" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📅 支出カレンダー (タップで修正/削除)</h3><div id="calendar"></div></div>
     <div id="dash-charts" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📈 月別・口座別の支出推移</h3><div class="chart-container"><canvas id="monthlyChart"></canvas></div></div>
     <div id="dash-history-account" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🏦 口座別の利用履歴</h3><select id="filter-account" onchange="renderAccountHistory()"><option value="">口座を選択してください</option></select><div class="history-list" id="history-container-account"></div></div>
@@ -150,6 +178,7 @@
     </div>
   </div>
 
+  <!-- 2. 登録 -->
   <div id="register-tab" class="tab-content">
     <div class="sub-tabs"><div class="sub-tab active" onclick="switchSubTab('ai')">📷 AIレシート</div><div class="sub-tab" onclick="switchSubTab('manual')">✏️ 手入力 (出/入)</div><div class="sub-tab" onclick="switchSubTab('transfer')">🔄 口座振替</div></div>
     <div id="mode-ai" class="sub-tab-content">
@@ -172,6 +201,7 @@
     </div>
   </div>
 
+  <!-- 3. 設定 -->
   <div id="settings-tab" class="tab-content">
     <h2>システム設定</h2>
     <div class="setting-section" style="border-top: none; margin-top: 0; padding-top: 0;">
@@ -190,8 +220,8 @@
 </div>
 
 <script>
-  // ★これぞ完全版。PWA（ホーム画面追加）のパースエラーを防ぐためのフルURL★
-  const GAS_URL = "https://lifestylesupportws.vercel.app/api/kakeibo";
+  // ★最初期に動いていた「GASへの直接通信」に原点回帰★
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null; let calendarInstance = null; let chartInstance = null; let radarChartInstance = null; let trendChartInstance = null; let appData = null; let simEvents = [];
@@ -220,13 +250,15 @@
     document.getElementById('lbl-man-account').innerText = document.getElementById('man-type').value === '収入' ? '入金先口座' : '出金元口座';
   }
 
-  // ★Vercelを経由する正規のfetch通信。これで全てが安定します★
+  // ★一番シンプルで動く「直接 fetch 通信」★
   async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
     showLoader(true, loadingMsg);
     payload.token = SECRET_TOKEN;
     try {
       const res = await fetch(GAS_URL, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        method: "POST",
+        headers: { "Content-Type": "text/plain" }, // CORS事前チェックを回避する設定
+        body: JSON.stringify(payload)
       });
       const json = await res.json();
       showLoader(false);
@@ -240,7 +272,9 @@
   function showLoader(show, msg = "高速処理中...⚡") { document.getElementById('loader-msg').innerText = msg; document.getElementById('global-loader').style.display = show ? 'block' : 'none'; }
 
   async function fetchInitialData() {
-    const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡"); appData = res.data;
+    const res = await postToGAS({ action: 'getInitialData' }, "アプリ起動中...⚡");
+    appData = res.data;
+
     let totalCurrent = 0; const accContainer = document.getElementById('account-container'); const filterAcc = document.getElementById('filter-account');
     const aiAcc = document.getElementById('ai-account'); const manAcc = document.getElementById('man-account'); const transFrom = document.getElementById('trans-from-account');
     const transTo = document.getElementById('trans-to-account'); const manageAccList = document.getElementById('manage-account-list');
@@ -297,9 +331,13 @@
   function renderRadarChart() {
     const period = document.getElementById('report-period').value; const type = document.querySelector('input[name="radar-type"]:checked').value;
     let txs = appData.transactions.filter(t => t.type === type);
-    if (period !== 'all') { if (period.includes('年')) { txs = txs.filter(t => t.date.startsWith(period.replace('年', ''))); } else { txs = txs.filter(t => t.date.startsWith(period)); } }
+    if (period !== 'all') {
+      if (period.includes('年')) txs = txs.filter(t => t.date.startsWith(period.replace('年', '')));
+      else txs = txs.filter(t => t.date.startsWith(period)); 
+    }
     const categoryTotals = {}; appData.categories.forEach(c => categoryTotals[c] = 0);
     txs.forEach(t => { if (categoryTotals[t.category] !== undefined) categoryTotals[t.category] += Number(t.amount); });
+
     const labels = Object.keys(categoryTotals); const data = Object.values(categoryTotals);
     const bgColor = type === '支出' ? 'rgba(217, 83, 79, 0.2)' : 'rgba(40, 167, 69, 0.2)'; const borderColor = type === '支出' ? '#d9534f' : '#28a745';
     const ctx = document.getElementById('radarChart').getContext('2d'); if (radarChartInstance) radarChartInstance.destroy();
@@ -315,7 +353,8 @@
     let titleStr = ''; let keys = []; let displayLabels = [];
 
     if (period === 'all') {
-      const mSet = new Set(); txs.forEach(t => mSet.add(t.date.substring(0, 7))); keys = [...mSet].sort(); displayLabels = keys.map(k => Number(k.substring(5, 7)) + '月'); titleStr = '全期間';
+      const mSet = new Set(); txs.forEach(t => mSet.add(t.date.substring(0, 7)));
+      keys = [...mSet].sort(); displayLabels = keys.map(k => Number(k.substring(5, 7)) + '月'); titleStr = '全期間';
     } else if (period.includes('年')) {
       const year = period.replace('年', ''); txs = txs.filter(t => t.date.startsWith(year));
       for(let i=1; i<=12; i++) { keys.push(`${year}-${String(i).padStart(2, '0')}`); displayLabels.push(`${i}月`); } titleStr = `${year}年`;
@@ -426,10 +465,14 @@
     const val = document.getElementById('filter-category').value; const summaryBox = document.getElementById('summary-category');
     if (!val) { document.getElementById('history-container-category').innerHTML = ''; summaryBox.style.display = 'none'; return; }
     let filtered = []; let title = '';
-    if (val.startsWith('cat_')) { const cat = val.replace('cat_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.category === cat); title = `カテゴリ「${cat}」`; } 
-    else if (val.startsWith('store_')) { const store = val.replace('store_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.title === store); title = `店舗「${store}」`; }
+    if (val.startsWith('cat_')) {
+      const cat = val.replace('cat_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.category === cat); title = `カテゴリ「${cat}」`;
+    } else if (val.startsWith('store_')) {
+      const store = val.replace('store_', ''); filtered = appData.transactions.filter(t => (t.type === '支出' || t.type === '収入') && t.title === store); title = `店舗「${store}」`;
+    }
     let tIn = 0; let tOut = 0;
     filtered.forEach(t => { if(t.type==='収入') tIn += Number(t.amount); else if(t.type==='支出') tOut += Number(t.amount); });
+    
     summaryBox.style.display = 'block';
     if(tIn > 0 && tOut > 0) {
       let diff = tIn - tOut; let c = diff>=0?'#28a745':'#d9534f'; let s = diff>0?'+':'';
@@ -486,7 +529,10 @@
     futureEvents.forEach(ev => {
       if (ev.type === '支出') { if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount; }
       else if (ev.type === '収入') { if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] += ev.amount; }
-      else if (ev.type === '振替') { if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount; if (simAccounts[ev.toAccount] !== undefined) simAccounts[ev.toAccount] += ev.amount; }
+      else if (ev.type === '振替') {
+        if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount;
+        if (simAccounts[ev.toAccount] !== undefined) simAccounts[ev.toAccount] += ev.amount;
+      }
 
       let badge = '', amtColor = '#d9534f', prefix = '-¥';
       if (ev.source === 'simulation') badge = '<span style="background:#fd7e14; color:#fff; font-size:0.75em; padding:2px 6px; border-radius:4px; margin-right:6px;">架空</span>';
@@ -544,11 +590,14 @@
 
   async function updateTransactionSubmit() {
     if (!document.getElementById('edit-account').value) { alert("対象口座を選択してください"); return; }
-    await postToGAS({ action: 'updateTransaction', data: {
-      id: document.getElementById('edit-id').value, type: document.getElementById('edit-type').value, date: document.getElementById('edit-date').value.replace(/-/g, '/'),
-      store: document.getElementById('edit-store').value, amount: document.getElementById('edit-amount').value, category: document.getElementById('edit-category').value,
-      account: document.getElementById('edit-account').value, toAccount: document.getElementById('edit-to-account').value, note: document.getElementById('edit-note').value
-    }}, "データ修正中...");
+    const payload = {
+      id: document.getElementById('edit-id').value, type: document.getElementById('edit-type').value,
+      date: document.getElementById('edit-date').value.replace(/-/g, '/'), store: document.getElementById('edit-store').value,
+      amount: document.getElementById('edit-amount').value, category: document.getElementById('edit-category').value,
+      account: document.getElementById('edit-account').value, toAccount: document.getElementById('edit-to-account').value,
+      note: document.getElementById('edit-note').value
+    };
+    await postToGAS({ action: 'updateTransaction', data: payload }, "データ修正中...");
     alert("修正を保存しました！"); closeModal(); fetchInitialData();
   }
 
@@ -600,7 +649,8 @@
     const amount = document.getElementById('man-amount').value; const acc = document.getElementById('man-account').value;
     if (!amount) { alert("金額を入力してください"); return; } if (!acc) { alert("対象口座を選択してください"); return; }
     await postToGAS({ action: 'saveTransaction', data: {
-      type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'), store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value, account: acc, note: document.getElementById('man-note').value
+      type: document.getElementById('man-type').value, date: document.getElementById('man-date').value.replace(/-/g, '/'),
+      store: document.getElementById('man-store').value, amount: amount, category: document.getElementById('man-category').value, account: acc, note: document.getElementById('man-note').value
     }}, "手入力データ保存中...");
     alert("登録完了しました！"); resetRegisterForm();
   }
