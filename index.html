@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>wagatsuma’s家計簿</title>
-  <!-- FullCalendar & Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -148,13 +147,11 @@
       <div id="report-breakdown-table" style="background:#fff; border:1px solid #eee; border-radius:8px; overflow:hidden;"></div>
     </div>
 
-    <!-- カレンダービュー -->
+    <!-- カレンダー・その他のビュー -->
     <div id="dash-calendar" style="display:none;">
       <button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button>
       <h3>📅 支出カレンダー (タップで修正/削除)</h3>
       <div id="calendar"></div>
-      
-      <!-- ★追加機能：カレンダー下部の月別・日別サマリー表示領域★ -->
       <div id="calendar-summary" style="margin-top: 30px; display: none;">
         <h3 id="cal-summary-title">📊 月間収支まとめ</h3>
         <div id="cal-month-summary" class="summary-box" style="display: block; margin-bottom: 20px;"></div>
@@ -162,7 +159,6 @@
         <div id="cal-daily-summary-table" style="background:#fff; border:1px solid #eee; border-radius:8px; overflow:hidden;"></div>
       </div>
     </div>
-
     <div id="dash-charts" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>📈 月別・口座別の支出推移</h3><div class="chart-container"><canvas id="monthlyChart"></canvas></div></div>
     <div id="dash-history-account" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🏦 口座別の利用履歴</h3><select id="filter-account" onchange="renderAccountHistory()"><option value="">口座を選択してください</option></select><div class="history-list" id="history-container-account"></div></div>
     <div id="dash-history-category" style="display:none;"><button class="btn-outline" onclick="backToDashMain()">← メニューに戻る</button><h3>🏢 店舗・項目別の履歴</h3><div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;"><label style="margin-top: 0;">🔍 履歴を絞り込む</label><select id="filter-category" onchange="renderCategoryHistory()"><option value="">カテゴリ・店舗を選択してください</option></select></div><div id="summary-category" class="summary-box"></div><div class="history-list" id="history-container-category"></div></div>
@@ -221,8 +217,8 @@
 </div>
 
 <script>
-  // ★GASの直接URL（Safariの通信ブロックを100%回避する設定）★
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxX0i3RlNExordqsUB1t5Qxun_rdL5I_s3DSwFPdvLlWU5HjIWmq3AA0xtKcQZbpTn1/exec";
+  // ★確実にVercel中継サーバーを使用する正しい設定★
+  const GAS_URL = "https://lifestylesupportws.vercel.app/api/kakeibo";
   const SECRET_TOKEN = "your_secret_token_123";
 
   let currentFile = null; let calendarInstance = null; let chartInstance = null; let radarChartInstance = null; let trendChartInstance = null; let appData = null; let simEvents = [];
@@ -251,49 +247,23 @@
     document.getElementById('lbl-man-account').innerText = document.getElementById('man-type').value === '収入' ? '入金先口座' : '出金元口座';
   }
 
-  // ★最強の解決策：Safari PWAのバグとGoogleボット検知を回避する「Form送信＋iframe」ハック★
-  function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
-    return new Promise((resolve, reject) => {
-      showLoader(true, loadingMsg);
-      payload.token = SECRET_TOKEN;
-
-      const iframeName = "gasFrame_" + new Date().getTime();
-      const iframe = document.createElement('iframe');
-      iframe.name = iframeName;
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = GAS_URL;
-      form.target = iframeName;
-      form.style.display = 'none';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload'; 
-      input.value = JSON.stringify(payload);
-      form.appendChild(input);
-      document.body.appendChild(form);
-
-      const messageHandler = function(e) {
-        if (e.data && typeof e.data.success !== 'undefined') {
-          window.removeEventListener('message', messageHandler);
-          document.body.removeChild(form);
-          setTimeout(() => { if(document.body.contains(iframe)) document.body.removeChild(iframe); }, 1000);
-          showLoader(false);
-
-          if (!e.data.success) {
-            alert("エラーが発生しました:\n" + e.data.error);
-            reject(new Error(e.data.error));
-          } else {
-            resolve(e.data);
-          }
-        }
-      };
-      window.addEventListener('message', messageHandler);
-      form.submit();
-    });
+  // ★普通の通信（fetch）に完全に戻しました★
+  async function postToGAS(payload, loadingMsg = "高速処理中...⚡") {
+    showLoader(true, loadingMsg);
+    payload.token = SECRET_TOKEN;
+    try {
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      showLoader(false);
+      if (!json.success) { alert("エラーが発生しました:\n" + json.error); throw new Error(json.error); }
+      return json;
+    } catch (err) {
+      showLoader(false); alert("通信に失敗しました。\n" + err.message); throw err;
+    }
   }
 
   function showLoader(show, msg = "高速処理中...⚡") { document.getElementById('loader-msg').innerText = msg; document.getElementById('global-loader').style.display = show ? 'block' : 'none'; }
@@ -351,73 +321,29 @@
     }
   }
 
-  // ★新規追加：カレンダー表示月ごとの収支サマリー計算・描画★
   function renderCalendarSummary(dateObj) {
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const targetMonthStr = `${year}-${month}`; 
-    
+    const year = dateObj.getFullYear(); const month = String(dateObj.getMonth() + 1).padStart(2, '0'); const targetMonthStr = `${year}-${month}`; 
     document.getElementById('cal-summary-title').innerText = `📊 ${year}年${Number(month)}月の収支まとめ`;
-    
-    let monthIn = 0; let monthOut = 0;
-    const dailyData = {};
-    
+    let monthIn = 0; let monthOut = 0; const dailyData = {};
     appData.transactions.forEach(tx => {
       const dateStr = tx.date.replace(/\//g, '-');
       if (dateStr.startsWith(targetMonthStr)) {
         if (!dailyData[dateStr]) dailyData[dateStr] = { in: 0, out: 0 };
-        if (tx.type === '収入') {
-          monthIn += Number(tx.amount);
-          dailyData[dateStr].in += Number(tx.amount);
-        } else if (tx.type === '支出') {
-          monthOut += Number(tx.amount);
-          dailyData[dateStr].out += Number(tx.amount);
-        }
+        if (tx.type === '収入') { monthIn += Number(tx.amount); dailyData[dateStr].in += Number(tx.amount); } 
+        else if (tx.type === '支出') { monthOut += Number(tx.amount); dailyData[dateStr].out += Number(tx.amount); }
       }
     });
-    
-    const summaryContainer = document.getElementById('calendar-summary');
-    summaryContainer.style.display = 'block';
-    
-    if (monthIn === 0 && monthOut === 0) {
-      document.getElementById('cal-month-summary').innerHTML = '<div style="text-align:center; color:#888;">この月の取引データはありません。</div>';
-      document.getElementById('cal-daily-summary-table').innerHTML = '';
-      return;
-    }
-    
-    let diff = monthIn - monthOut;
-    let dColor = diff >= 0 ? '#28a745' : '#d9534f';
-    let dSign = diff > 0 ? '+' : '';
-    
-    document.getElementById('cal-month-summary').innerHTML = `
-      <div style="display:flex; justify-content:space-between; text-align:center;">
-        <div style="flex:1;">収入<br><span style="color:#28a745; font-size:1.1em;">¥${monthIn.toLocaleString()}</span></div>
-        <div style="flex:1;">支出<br><span style="color:#d9534f; font-size:1.1em;">¥${monthOut.toLocaleString()}</span></div>
-        <div style="flex:1;">差引<br><span style="color:${dColor}; font-size:1.1em;">${dSign}¥${diff.toLocaleString()}</span></div>
-      </div>
-    `;
-    
-    const sortedDays = Object.keys(dailyData).sort(); // 日付順
+    const summaryContainer = document.getElementById('calendar-summary'); summaryContainer.style.display = 'block';
+    if (monthIn === 0 && monthOut === 0) { document.getElementById('cal-month-summary').innerHTML = '<div style="text-align:center; color:#888;">この月の取引データはありません。</div>'; document.getElementById('cal-daily-summary-table').innerHTML = ''; return; }
+    let diff = monthIn - monthOut; let dColor = diff >= 0 ? '#28a745' : '#d9534f'; let dSign = diff > 0 ? '+' : '';
+    document.getElementById('cal-month-summary').innerHTML = `<div style="display:flex; justify-content:space-between; text-align:center;"><div style="flex:1;">収入<br><span style="color:#28a745; font-size:1.1em;">¥${monthIn.toLocaleString()}</span></div><div style="flex:1;">支出<br><span style="color:#d9534f; font-size:1.1em;">¥${monthOut.toLocaleString()}</span></div><div style="flex:1;">差引<br><span style="color:${dColor}; font-size:1.1em;">${dSign}¥${diff.toLocaleString()}</span></div></div>`;
+    const sortedDays = Object.keys(dailyData).sort(); 
     let tableHtml = `<table class="breakdown-table"><tr><th>日付</th><th style="text-align:right;">収入</th><th style="text-align:right;">支出</th><th style="text-align:right;">日別収支</th></tr>`;
-    
     sortedDays.forEach(day => {
-      const d = dailyData[day];
-      const dayDiff = d.in - d.out;
-      const c = dayDiff >= 0 ? '#28a745' : '#d9534f';
-      const s = dayDiff > 0 ? '+' : '';
-      const dayFormatted = `${Number(day.substring(5,7))}/${Number(day.substring(8,10))}`; 
-      
-      tableHtml += `
-        <tr>
-          <td>${dayFormatted}</td>
-          <td class="amount" style="color:#28a745; font-weight:normal;">${d.in > 0 ? '+¥' + d.in.toLocaleString() : '-'}</td>
-          <td class="amount" style="color:#d9534f; font-weight:normal;">${d.out > 0 ? '-¥' + d.out.toLocaleString() : '-'}</td>
-          <td class="amount" style="color:${c};">${s}¥${dayDiff.toLocaleString()}</td>
-        </tr>
-      `;
+      const d = dailyData[day]; const dayDiff = d.in - d.out; const c = dayDiff >= 0 ? '#28a745' : '#d9534f'; const s = dayDiff > 0 ? '+' : ''; const dayFormatted = `${Number(day.substring(5,7))}/${Number(day.substring(8,10))}`; 
+      tableHtml += `<tr><td>${dayFormatted}</td><td class="amount" style="color:#28a745; font-weight:normal;">${d.in > 0 ? '+¥' + d.in.toLocaleString() : '-'}</td><td class="amount" style="color:#d9534f; font-weight:normal;">${d.out > 0 ? '-¥' + d.out.toLocaleString() : '-'}</td><td class="amount" style="color:${c};">${s}¥${dayDiff.toLocaleString()}</td></tr>`;
     });
-    tableHtml += `</table>`;
-    document.getElementById('cal-daily-summary-table').innerHTML = tableHtml;
+    tableHtml += `</table>`; document.getElementById('cal-daily-summary-table').innerHTML = tableHtml;
   }
 
   function renderAllReports() { renderRadarChart(); renderTrendChart(); renderBreakdownTable(); }
@@ -438,10 +364,8 @@
     const period = document.getElementById('report-period').value; const target = document.getElementById('report-target').value;
     const summaryBox = document.getElementById('report-trend-summary');
     if (!target) { summaryBox.style.display = 'none'; if (trendChartInstance) trendChartInstance.destroy(); return; }
-
     let txs = appData.transactions.filter(t => t.type === '支出' || t.type === '収入');
     let titleStr = ''; let keys = []; let displayLabels = [];
-
     if (period === 'all') {
       const mSet = new Set(); txs.forEach(t => mSet.add(t.date.substring(0, 7))); keys = [...mSet].sort(); displayLabels = keys.map(k => Number(k.substring(5, 7)) + '月'); titleStr = '全期間';
     } else if (period.includes('年')) {
@@ -482,8 +406,7 @@
       datasets = [{ label: '金額', data: dataArr, borderColor: mainColor, backgroundColor: bgColor, borderWidth: 2, fill: true, tension: 0.3 }];
     }
     summaryBox.style.display = 'block'; summaryBox.innerHTML = summaryHtml;
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    if (trendChartInstance) trendChartInstance.destroy();
+    const ctx = document.getElementById('trendChart').getContext('2d'); if (trendChartInstance) trendChartInstance.destroy();
     trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: displayLabels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
   }
 
@@ -588,12 +511,9 @@
       else if (tx.type === '振替') events.push({ title: `🔄 ${tx.account}→${tx.toAccount} ¥${tx.amount}`, start: tx.date.replace(/\//g, '-'), color: '#6c757d', extendedProps: { rawData: tx, isFc: false } });
     });
     fcs.forEach(fc => { events.push({ title: `(予) ${fc.title} ¥${fc.amount}`, start: fc.date.replace(/\//g, '-'), color: '#fd7e14', extendedProps: { rawData: fc, isFc: true } }); });
-    
     if (calendarInstance) calendarInstance.destroy();
     calendarInstance = new FullCalendar.Calendar(calendarEl, { 
-      initialView: 'dayGridMonth', 
-      events: events, 
-      contentHeight: 'auto', 
+      initialView: 'dayGridMonth', events: events, contentHeight: 'auto', 
       datesSet: function(info) { renderCalendarSummary(info.view.currentStart); },
       eventClick: function(info) { showDetailModal(info.event.extendedProps.rawData, info.event.extendedProps.isFc); } 
     });
@@ -620,7 +540,6 @@
     simEvents.forEach(sim => { const d = sim.date.replace(/\//g, '-'); if (d >= todayStr) futureEvents.push({ ...sim, date: d }); });
 
     futureEvents.sort((a, b) => a.date.localeCompare(b.date));
-
     let historyHtml = '';
     futureEvents.forEach(ev => {
       if (ev.type === '支出') { if (simAccounts[ev.account] !== undefined) simAccounts[ev.account] -= ev.amount; }
